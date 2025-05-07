@@ -125,6 +125,10 @@ class RoleResource extends Resource
                         ->action(
                             fn(RoleService $service, Collection $records) =>
                             $service->deleteBulkAction(records: $records)
+                        )
+                        ->hidden(
+                            fn(): bool =>
+                            !auth()->user()->can('Deletar Níveis de Acessos'),
                         ),
                 ]),
             ])

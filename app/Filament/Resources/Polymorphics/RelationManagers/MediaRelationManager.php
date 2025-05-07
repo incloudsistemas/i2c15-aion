@@ -99,7 +99,7 @@ class MediaRelationManager extends RelationManager
                                     ->button()
                                     ->action(
                                         fn(Media $record) =>
-                                        response()->download($record->getPath(), $record->file_name)
+                                        response()->download($record->getPath(), $record->file_name),
                                     ),
                             ]),
                         Tables\Actions\EditAction::make(),

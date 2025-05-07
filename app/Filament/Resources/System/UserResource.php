@@ -25,7 +25,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\HtmlString;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -431,6 +430,10 @@ class UserResource extends Resource
                         ->action(
                             fn(UserService $service, Collection $records) =>
                             $service->deleteBulkAction(records: $records)
+                        )
+                        ->hidden(
+                            fn(): bool =>
+                            !auth()->user()->can('Deletar Usuários'),
                         ),
                 ]),
             ])
@@ -714,7 +717,7 @@ class UserResource extends Resource
                         Infolists\Components\Tabs\Tab::make(__('Anexos'))
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('attachments')
-                                    ->label('Arquivo(s)')
+                                    ->label(__('Arquivo(s)'))
                                     ->schema([
                                         Infolists\Components\TextEntry::make('name')
                                             ->label(__('Nome')),
@@ -726,19 +729,22 @@ class UserResource extends Resource
                                                 fn(Media $record): string =>
                                                 AbbrNumberFormat($record->size),
                                             )
-                                            ->hint(
-                                                fn(Media $record): HtmlString =>
-                                                new HtmlString('<a href="' . $record->getUrl() . '" target="_blank">Download</a>')
-                                            )
-                                            ->hintIcon('heroicon-s-arrow-down-tray')
-                                            ->hintColor('primary'),
+                                            ->hintAction(
+                                                Infolists\Components\Actions\Action::make('download')
+                                                    ->label(__('Download'))
+                                                    ->icon('heroicon-s-arrow-down-tray')
+                                                    ->action(
+                                                        fn(Media $record) =>
+                                                        response()->download($record->getPath(), $record->file_name),
+                                                    ),
+                                            ),
                                     ])
                                     ->columns(3)
                                     ->columnSpanFull(),
                             ])
                             ->visible(
                                 fn(User $record): bool =>
-                                $record->attachments->count() > 0
+                                $record->attachments?->count() > 0
                             ),
                     ])
                     ->columns(3)

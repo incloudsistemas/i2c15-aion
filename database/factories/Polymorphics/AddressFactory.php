@@ -21,7 +21,7 @@ class AddressFactory extends Factory
             'addressable_id'   => null, // Set dynamically
             'addressable_type' => null, // Set dynamically
             'name'             => $this->faker->randomElement(['Casa', 'Trabalho', 'Outros']),
-            'slug'             => Str::slug($this->faker->word()),
+            // 'slug'             => Str::slug($this->faker->word()),
             'is_main'          => $this->faker->boolean,
             'zipcode'          => $this->faker->postcode,
             'state'            => $this->faker->state,

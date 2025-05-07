@@ -98,6 +98,10 @@ class PermissionResource extends Resource
                         ->action(
                             fn(PermissionService $service, Collection $records) =>
                             $service->deleteBulkAction(records: $records)
+                        )
+                        ->hidden(
+                            fn(): bool =>
+                            !auth()->user()->hasRole('Superadministrador'),
                         ),
                 ]),
             ])

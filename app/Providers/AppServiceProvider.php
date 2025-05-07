@@ -26,6 +26,30 @@ class AppServiceProvider extends ServiceProvider
             'permissions' => 'App\Models\System\Permission',
             'roles'       => 'App\Models\System\Role',
 
+            'crm_sources'                => 'App\Models\Crm\Source',
+            'crm_contact_roles'          => 'App\Models\Crm\Contacts\Role',
+            'crm_contacts'               => 'App\Models\Crm\Contacts\Contact',
+            'crm_contact_individuals'    => 'App\Models\Crm\Contacts\Individual',
+            'crm_contact_legal_entities' => 'App\Models\Crm\Contacts\LegalEntity',
+
+            // 'crm_funnels'                => 'App\Models\Crm\Funnels\Funnel',
+            // 'crm_funnel_stages'          => 'App\Models\Crm\Funnels\FunnelStage',
+            // 'crm_funnel_substages'       => 'App\Models\Crm\Funnels\FunnelSubstage',
+            // 'crm_business'               => 'App\Models\Crm\Business\Business',
+            // 'crm_business_funnel_stages' => 'App\Models\Crm\Business\FunnelStage',
+            // 'crm_queues'                 => 'App\Models\Crm\Queues\Queue',
+
+            // 'cms_posts'                 => 'App\Models\Cms\Post',
+            // 'cms_pages'                 => 'App\Models\Cms\Page',
+            // 'cms_blog_posts'            => 'App\Models\Cms\BlogPost',
+            // 'cms_testimonials'          => 'App\Models\Cms\Testimonial',
+            // 'cms_partners'              => 'App\Models\Cms\Partner',
+            // 'cms_external_useful_links' => 'App\Models\Cms\ExternalUsefulLink',
+            // 'cms_stories'               => 'App\Models\Cms\Story',
+            // 'cms_link_trees'            => 'App\Models\Cms\LinkTree',
+            // 'cms_post_categories'       => 'App\Models\Cms\PostCategory',
+            // 'cms_post_sliders'          => 'App\Models\Cms\PostSlider',
+
             'addresses' => 'App\Models\Polymorphics\Address',
         ]);
     }

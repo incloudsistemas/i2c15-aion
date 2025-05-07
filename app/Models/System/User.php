@@ -9,6 +9,7 @@ use App\Enums\ProfileInfos\EducationalLevelEnum;
 use App\Enums\ProfileInfos\GenderEnum;
 use App\Enums\ProfileInfos\MaritalStatusEnum;
 use App\Enums\ProfileInfos\UserStatusEnum;
+use App\Models\Crm\Contacts\Contact;
 use App\Models\Polymorphics\Address;
 use App\Observers\System\UserObserver;
 use App\Services\System\RoleService;
@@ -16,6 +17,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -66,6 +68,11 @@ class User extends Authenticatable implements FilamentUser, HasMedia
             'educational_level' => EducationalLevelEnum::class,
             'status'            => UserStatusEnum::class,
         ];
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(related: Contact::class);
     }
 
     public function address(): MorphOne
@@ -219,6 +226,9 @@ class User extends Authenticatable implements FilamentUser, HasMedia
 
     public function getAttachmentsAttribute()
     {
-        return $this->getMedia('attachments');
+        $attachments = $this->getMedia('attachments')
+            ->sortBy('order_column');
+
+        return $attachments->isEmpty() ? null : $attachments;
     }
 }

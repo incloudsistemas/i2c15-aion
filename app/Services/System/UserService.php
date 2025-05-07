@@ -66,6 +66,47 @@ class UserService extends BaseService
         return $query->orderByRaw("$orderByCase $direction", $bindings);
     }
 
+    public function getUserOptionsBySearch(?string $search, ?array $roles = null): array
+    {
+        return $this->user->byStatuses(statuses: [1]) // 1 - Ativo
+            ->where(function (Builder $query) use ($search): Builder {
+                return $query->where('cpf', 'like', "%{$search}%")
+                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), '/', '') LIKE ?", ["%{$search}%"])
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->when($roles, function (Builder $query) use ($roles): Builder {
+                return $query->whereHas('roles', function (Builder $query) use ($roles): Builder {
+                    return $query->whereIn('id', $roles);
+                });
+            })
+            ->limit(50)
+            ->get()
+            ->mapWithKeys(function (User $user): array {
+                $label = $user->name . ($user->cpf ? " - {$user->cpf}" : '');
+                return [$user->id => $label];
+            })
+            ->toArray();
+    }
+
+    // Single
+    public function getUserOptionLabel(?int $value): ?string
+    {
+        return $this->user->find($value)?->name;
+    }
+
+    // Multiple
+    public function getUserOptionLabels(array $values): array
+    {
+        return $this->user->whereIn('id', $values)
+            ->get()
+            ->mapWithKeys(
+                fn(User $user): array =>
+                [$user->id => $user->name],
+            )
+            ->toArray();
+    }
+
     /**
      * $action can be:
      * Filament\Tables\Actions\DeleteAction;

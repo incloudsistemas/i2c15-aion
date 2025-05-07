@@ -12,7 +12,7 @@ class MediaService extends BaseService
 {
     public function __construct(protected Media $media)
     {
-        //
+        parent::__construct();
     }
 
     public function mutateFormDataToCreate(Model $ownerRecord, array $data): array

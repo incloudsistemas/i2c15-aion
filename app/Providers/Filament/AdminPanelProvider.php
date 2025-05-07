@@ -52,6 +52,16 @@ class AdminPanelProvider extends PanelProvider
                 'logout' => Navigation\MenuItem::make()
                     ->label('Sair'),
             ])
+            ->navigationGroups([
+                Navigation\NavigationGroup::make()
+                    ->label('CRM'),
+                Navigation\NavigationGroup::make()
+                    ->label('Financeiro'),
+                Navigation\NavigationGroup::make()
+                    ->label('CMS & Marketing'),
+                Navigation\NavigationGroup::make()
+                    ->label('Sistema'),
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
