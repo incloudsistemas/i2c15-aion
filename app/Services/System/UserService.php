@@ -2,7 +2,6 @@
 
 namespace App\Services\System;
 
-use App\Enums\ProfileInfos\UserStatusEnum;
 use App\Models\System\User;
 use App\Services\BaseService;
 use Filament\Notifications\Notification;
@@ -28,42 +27,6 @@ class UserService extends BaseService
     public function tableSearchByMainPhone(Builder $query, string $search): Builder
     {
         return $query->whereRaw("JSON_EXTRACT(phones, '$[0].number') LIKE ?", ["%$search%"]);
-    }
-
-    public function tableSearchByStatus(Builder $query, string $search): Builder
-    {
-        $statuses = UserStatusEnum::getAssociativeArray();
-
-        $matchingStatuses = [];
-        foreach ($statuses as $index => $status) {
-            if (stripos($status, $search) !== false) {
-                $matchingStatuses[] = $index;
-            }
-        }
-
-        if ($matchingStatuses) {
-            return $query->whereIn('status', $matchingStatuses);
-        }
-
-        return $query;
-    }
-
-    public function tableSortByStatus(Builder $query, string $direction): Builder
-    {
-        $statuses = UserStatusEnum::getAssociativeArray();
-
-        $caseParts = [];
-        $bindings = [];
-
-        foreach ($statuses as $key => $status) {
-            $caseParts[] = "WHEN ? THEN ?";
-            $bindings[] = $key;
-            $bindings[] = $status;
-        }
-
-        $orderByCase = "CASE status " . implode(' ', $caseParts) . " END";
-
-        return $query->orderByRaw("$orderByCase $direction", $bindings);
     }
 
     public function getUserOptionsBySearch(?string $search, ?array $roles = null): array
@@ -126,6 +89,26 @@ class UserService extends BaseService
             // $action->cancel();
             $action->halt();
         }
+
+        if ($this->isAssignedToContacts(user: $user)) {
+            Notification::make()
+                ->title($title)
+                ->warning()
+                ->body(__('Este usuário possui contatos associados. Para excluir, você deve primeiro desvincular todos os contatos que estão associados a ele.'))
+                ->send();
+
+            $action->halt();
+        }
+
+        if ($this->isAssignedToBusiness(user: $user)) {
+            Notification::make()
+                ->title($title)
+                ->warning()
+                ->body(__('Este usuário possui negócios associados. Para excluir, você deve primeiro desvincular todos os negócios que estão associados a ele.'))
+                ->send();
+
+            $action->halt();
+        }
     }
 
     public function deleteBulkAction(Collection $records): void
@@ -134,7 +117,11 @@ class UserService extends BaseService
         $allowed = [];
 
         foreach ($records as $user) {
-            if ($this->isUserHimself(user: $user)) {
+            if (
+                $this->isUserHimself(user: $user)
+                || $this->isAssignedToContacts(user: $user)
+                || $this->isAssignedToBusiness(user: $user)
+            ) {
                 $blocked[] = $user->name;
                 continue;
             }
@@ -172,5 +159,17 @@ class UserService extends BaseService
     protected function isUserHimself(User $user): bool
     {
         return auth()->id() === $user->id;
+    }
+
+    protected function isAssignedToContacts(User $user): bool
+    {
+        return $user->contacts()
+            ->exists();
+    }
+
+    protected function isAssignedToBusiness(User $user): bool
+    {
+        return $user->business()
+            ->exists();
     }
 }

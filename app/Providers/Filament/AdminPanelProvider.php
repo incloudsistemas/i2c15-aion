@@ -33,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->colors([
-                'primary' => Color::Violet,
+                'primary' => Color::Cyan,
             ])
             ->favicon(url: asset('images/i2c-favicon.ico'))
             ->brandLogo(asset('images/i2c-logo.png'))

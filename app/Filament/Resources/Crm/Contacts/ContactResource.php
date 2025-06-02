@@ -140,14 +140,10 @@ class ContactResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\Action::make('create-individual')
                         ->label(__('Criar Pessoa'))
-                        ->url(
-                            IndividualResource::getUrl('create'),
-                        ),
+                        ->url(IndividualResource::getUrl('create')),
                     Tables\Actions\Action::make('create-legal-entity')
                         ->label(__('Criar Empresa'))
-                        ->url(
-                            LegalEntityResource::getUrl('create'),
-                        ),
+                        ->url(LegalEntityResource::getUrl('create')),
                 ])
                     ->label(__('Criar Contato'))
                     ->icon('heroicon-m-chevron-down')
@@ -165,6 +161,11 @@ class ContactResource extends Resource
     protected static function getTableColumns(): array
     {
         return [
+            Tables\Columns\TextColumn::make('id')
+                ->label(__('#ID'))
+                ->searchable()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\SpatieMediaLibraryImageColumn::make('contactable.avatar')
                 ->label('')
                 ->collection('avatar')
@@ -208,17 +209,17 @@ class ContactResource extends Resource
                 ->label(__('Captador'))
                 ->searchable()
                 ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\TextColumn::make('status')
                 ->label(__('Status'))
                 ->badge()
                 ->searchable(
                     query: fn(ContactService $service, Builder $query, string $search): Builder =>
-                    $service->tableSearchByStatus(query: $query, search: $search),
+                    $service->tableSearchByStatus(query: $query, search: $search, enumClass: UserStatusEnum::class),
                 )
                 ->sortable(
                     query: fn(ContactService $service, Builder $query, string $direction): Builder =>
-                    $service->tableSortByStatus(query: $query, direction: $direction),
+                    $service->tableSortByStatus(query: $query, direction: $direction, enumClass: UserStatusEnum::class),
                 )
                 ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\TextColumn::make('created_at')
@@ -251,8 +252,6 @@ class ContactResource extends Resource
                 ->relationship(
                     name: 'roles',
                     titleAttribute: 'name',
-                    modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByRolesWhereHasContacts(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -261,8 +260,6 @@ class ContactResource extends Resource
                 ->relationship(
                     name: 'source',
                     titleAttribute: 'name',
-                    modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryBySourcesWhereHasContacts(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -272,7 +269,7 @@ class ContactResource extends Resource
                     name: 'owner',
                     titleAttribute: 'name',
                     modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByOwnersWhereHasContacts(query: $query),
+                    $service->getQueryByElementsWhereHasContactsBasedOnAuthRoles(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -312,7 +309,7 @@ class ContactResource extends Resource
                 ])
                 ->query(
                     fn(ContactService $service, Builder $query, array $data): Builder =>
-                    $service->tableFilterByCreatedAt(query: $query, data: $data),
+                    $service->tableFilterByCreatedAt(query: $query, data: $data)
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -359,6 +356,8 @@ class ContactResource extends Resource
                     ->tabs([
                         Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
                             ->schema([
+                                Infolists\Components\TextEntry::make('id')
+                                    ->label(__('#ID')),
                                 Infolists\Components\SpatieMediaLibraryImageEntry::make('contactable.avatar')
                                     ->label(__('Avatar'))
                                     ->hiddenLabel()
@@ -433,6 +432,18 @@ class ContactResource extends Resource
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.display_birth_date')
                                     ->label(__('Dt. nascimento'))
+                                    ->visible(
+                                        fn(?string $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('source.name')
+                                    ->label(__('Origem'))
+                                    ->visible(
+                                        fn(?string $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('owner.name')
+                                    ->label(__('Captador'))
                                     ->visible(
                                         fn(?string $state): bool =>
                                         !empty($state),

@@ -106,7 +106,7 @@ class LegalEntityResource extends Resource
                                     contactableType: $contactableType,
                                     attribute: $attribute,
                                     state: $state,
-                                    fail: $fail
+                                    fail: $fail,
                                 );
                             };
                         },
@@ -137,7 +137,7 @@ class LegalEntityResource extends Resource
                     ])
                     ->itemLabel(
                         fn(array $state): ?string =>
-                        $state['email'] ?? null
+                        $state['email'] ?? null,
                     )
                     ->addActionLabel(__('Adicionar email'))
                     ->defaultItems(0)
@@ -145,11 +145,11 @@ class LegalEntityResource extends Resource
                     ->collapsible()
                     ->collapseAllAction(
                         fn(Forms\Components\Actions\Action $action) =>
-                        $action->label(__('Minimizar todos'))
+                        $action->label(__('Minimizar todos')),
                     )
                     ->deleteAction(
                         fn(Forms\Components\Actions\Action $action) =>
-                        $action->requiresConfirmation()
+                        $action->requiresConfirmation(),
                     )
                     ->columnSpanFull()
                     ->columns(2),
@@ -177,7 +177,7 @@ class LegalEntityResource extends Resource
                                             contactableType: $contactableType,
                                             attribute: $attribute,
                                             state: $state,
-                                            fail: $fail
+                                            fail: $fail,
                                         );
                                     };
                                 },
@@ -352,17 +352,18 @@ class LegalEntityResource extends Resource
                     // ->default(1)
                     // ->selectablePlaceholder(false)
                     ->native(false),
-                Forms\Components\TextInput::make('anual_income')
-                    ->label(__('Receita anual'))
-                    // ->numeric()
-                    ->prefix('R$')
-                    ->mask(
-                        Support\RawJs::make(<<<'JS'
-                            $money($input, ',')
-                        JS)
-                    )
-                    ->placeholder('0,00')
-                    ->maxValue(42949672.95),
+                Forms\Components\Select::make('monthly_income')
+                    ->label(__('Faturamento mensal'))
+                    ->options([
+                        'até R$ 10.000'                 => 'até R$ 10.000',
+                        'entre R$ 11.000 e R$ 50.000'   => 'entre R$ 11.000 e R$ 50.000',
+                        'entre R$ 51.000 e R$ 100.000'  => 'entre R$ 51.000 e R$ 100.000',
+                        'entre R$ 101.000 e R$ 300.000' => 'entre R$ 101.000 e R$ 300.000',
+                        'acima de R$ 300.000'           => 'acima de R$ 300.000',
+                    ])
+                    // ->default(1)
+                    // ->selectablePlaceholder(false)
+                    ->native(false),
                 Forms\Components\Textarea::make('contact.complement')
                     ->label(__('Sobre'))
                     ->rows(4)
@@ -430,7 +431,7 @@ class LegalEntityResource extends Resource
                         ->label(__('Excluir'))
                         ->before(
                             fn(ContactService $service, Tables\Actions\DeleteAction $action, LegalEntity $record) =>
-                            $service->preventDeleteIf(action: $action, contact: $record->contact)
+                            $service->preventDeleteIf(action: $action, contact: $record->contact),
                         ),
                 ])
                     ->label(__('Ações'))
@@ -462,6 +463,11 @@ class LegalEntityResource extends Resource
     protected static function getTableColumns(): array
     {
         return [
+            Tables\Columns\TextColumn::make('contact.id')
+                ->label(__('#ID'))
+                ->searchable()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\SpatieMediaLibraryImageColumn::make('avatar')
                 ->label('')
                 ->collection('avatar')
@@ -505,7 +511,7 @@ class LegalEntityResource extends Resource
                 ->label(__('Captador'))
                 ->searchable()
                 ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\TextColumn::make('contact.status')
                 ->label(__('Status'))
                 ->badge()
@@ -541,8 +547,6 @@ class LegalEntityResource extends Resource
                 ->relationship(
                     name: 'contact.roles',
                     titleAttribute: 'name',
-                    modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByRolesWhereHasContacts(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -551,8 +555,6 @@ class LegalEntityResource extends Resource
                 ->relationship(
                     name: 'contact.source',
                     titleAttribute: 'name',
-                    modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryBySourcesWhereHasContacts(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -562,7 +564,7 @@ class LegalEntityResource extends Resource
                     name: 'contact.owner',
                     titleAttribute: 'name',
                     modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByOwnersWhereHasContacts(query: $query),
+                    $service->getQueryByElementsWhereHasContactsBasedOnAuthRoles(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -572,7 +574,7 @@ class LegalEntityResource extends Resource
                 ->options(UserStatusEnum::class)
                 ->query(
                     fn(ContactService $service, Builder $query, array $data): Builder =>
-                    $service->tableFilterByContactStatuses(query: $query, data: $data)
+                    $service->tableFilterByContactStatuses(query: $query, data: $data),
                 ),
             Tables\Filters\Filter::make('contact.created_at')
                 ->label(__('Cadastro'))
@@ -653,6 +655,8 @@ class LegalEntityResource extends Resource
                     ->tabs([
                         Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
                             ->schema([
+                                Infolists\Components\TextEntry::make('contact.id')
+                                    ->label(__('#ID')),
                                 Infolists\Components\SpatieMediaLibraryImageEntry::make('avatar')
                                     ->label(__('Avatar'))
                                     ->hiddenLabel()
@@ -735,8 +739,20 @@ class LegalEntityResource extends Resource
                                         fn(?string $state): bool =>
                                         !empty($state),
                                     ),
-                                Infolists\Components\TextEntry::make('display_anual_income')
-                                    ->label(__('Receita anual R$'))
+                                Infolists\Components\TextEntry::make('monthly_income')
+                                    ->label(__('Faturamento mensal'))
+                                    ->visible(
+                                        fn(?string $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('contact.source.name')
+                                    ->label(__('Origem'))
+                                    ->visible(
+                                        fn(?string $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('contact.owner.name')
+                                    ->label(__('Captador'))
                                     ->visible(
                                         fn(?string $state): bool =>
                                         !empty($state),
@@ -885,9 +901,7 @@ class LegalEntityResource extends Resource
         //     });
         // }
 
-        return $query->whereHas('contact', function (Builder $query) use ($user): Builder {
-            return $query->where('user_id', $user->id);
-        });
+        return $query->whereHas('contact', fn(Builder $query): Builder => $query->where('user_id', $user->id));
     }
 
     public static function getGloballySearchableAttributes(): array

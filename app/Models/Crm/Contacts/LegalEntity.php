@@ -4,6 +4,7 @@ namespace App\Models\Crm\Contacts;
 
 use App\Observers\Crm\Contacts\LegalEntityObserver;
 use App\Traits\Crm\Contacts\Contactable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -25,8 +26,18 @@ class LegalEntity extends Model implements HasMedia
         'url',
         'sector',
         'num_employees',
-        'anual_income',
+        'monthly_income',
     ];
+
+    protected static function booted(): void
+    {
+        static::observe(LegalEntityObserver::class);
+    }
+
+    /**
+     * RELATIONSHIPS.
+     *
+     */
 
     public function individuals(): BelongsToMany
     {
@@ -41,38 +52,5 @@ class LegalEntity extends Model implements HasMedia
     public function contact(): MorphOne
     {
         return $this->morphOne(related: Contact::class, name: 'contactable');
-    }
-
-    /**
-     * EVENT LISTENER.
-     *
-     */
-
-    protected static function boot()
-    {
-        parent::boot();
-        self::observe(LegalEntityObserver::class);
-    }
-
-    /**
-     * SCOPES.
-     *
-     */
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
-
-    public function getDisplayAnualIncomeAttribute(): ?string
-    {
-        return $this->anual_income
-            ? number_format($this->anual_income, 2, ',', '.')
-            : null;
     }
 }

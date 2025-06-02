@@ -2,7 +2,6 @@
 
 namespace App\Services\Crm;
 
-use App\Enums\DefaultStatusEnum;
 use App\Models\Crm\Source;
 use App\Services\BaseService;
 use Filament\Notifications\Notification;
@@ -15,42 +14,6 @@ class SourceService extends BaseService
     public function __construct(protected Source $source)
     {
         parent::__construct();
-    }
-
-    public function tableSearchByStatus(Builder $query, string $search): Builder
-    {
-        $statuses = DefaultStatusEnum::getAssociativeArray();
-
-        $matchingStatuses = [];
-        foreach ($statuses as $index => $status) {
-            if (stripos($status, $search) !== false) {
-                $matchingStatuses[] = $index;
-            }
-        }
-
-        if ($matchingStatuses) {
-            return $query->whereIn('status', $matchingStatuses);
-        }
-
-        return $query;
-    }
-
-    public function tableSortByStatus(Builder $query, string $direction): Builder
-    {
-        $statuses = DefaultStatusEnum::getAssociativeArray();
-
-        $caseParts = [];
-        $bindings = [];
-
-        foreach ($statuses as $key => $status) {
-            $caseParts[] = "WHEN ? THEN ?";
-            $bindings[] = $key;
-            $bindings[] = $status;
-        }
-
-        $orderByCase = "CASE status " . implode(' ', $caseParts) . " END";
-
-        return $query->orderByRaw("$orderByCase $direction", $bindings);
     }
 
     public function getQueryBySources(Builder $query): Builder

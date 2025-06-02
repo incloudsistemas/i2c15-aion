@@ -23,21 +23,13 @@ class Role extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status' => DefaultStatusEnum::class,
-        ];
-    }
+    protected $casts = [
+        'status' => DefaultStatusEnum::class,
+    ];
 
-    public function contacts()
+    protected static function booted(): void
     {
-        return $this->belongsToMany(
-            related: Contact::class,
-            table: 'crm_contact_crm_contact_role',
-            foreignPivotKey: 'role_id',
-            relatedPivotKey: 'contact_id'
-        );
+        static::observe(RoleObserver::class);
     }
 
     public function sluggable(): array
@@ -55,14 +47,18 @@ class Role extends Model
     }
 
     /**
-     * EVENT LISTENER.
+     * RELATIONSHIPS.
      *
      */
 
-    protected static function boot()
+    public function contacts()
     {
-        parent::boot();
-        self::observe(RoleObserver::class);
+        return $this->belongsToMany(
+            related: Contact::class,
+            table: 'crm_contact_crm_contact_role',
+            foreignPivotKey: 'role_id',
+            relatedPivotKey: 'contact_id'
+        );
     }
 
     /**
@@ -74,14 +70,4 @@ class Role extends Model
     {
         return $query->whereIn('status', $statuses);
     }
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
 }

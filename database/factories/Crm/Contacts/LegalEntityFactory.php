@@ -25,12 +25,25 @@ class LegalEntityFactory extends Factory
             'state_registration'     => $this->faker->optional()->numerify('###########'),
             'url'                    => $this->faker->optional()->url(),
             'sector'                 => $this->faker->optional()->randomElement([
-                'Serviços', 'Comércio', 'Indústria', 'Outros'
+                'Serviços',
+                'Comércio',
+                'Indústria',
+                'Outros'
             ]),
             'num_employees'          => $this->faker->optional()->randomElement([
-                '1-5', '6-10', '11-50', '51-250', '251-1000'
+                '1-5',
+                '6-10',
+                '11-50',
+                '51-250',
+                '251-1000'
             ]),
-            'anual_income'           => $this->faker->optional()->numberBetween(100000, 10000000),
+            'monthly_income'         => $this->faker->optional()->randomElement([
+                'até R$ 10.000',
+                'entre R$ 11.000 e R$ 50.000',
+                'entre R$ 51.000 e R$ 100.000',
+                'entre R$ 101.000 e R$ 300.000',
+                'acima de R$ 300.000'
+            ]),
         ];
     }
 
@@ -40,13 +53,15 @@ class LegalEntityFactory extends Factory
      */
     public function configure()
     {
-        return $this->afterCreating(function (LegalEntity $legalEntity) {
-            // Create an Address related to the LegalEntity
-            Address::factory()
-                ->create([
-                    'addressable_id'   => $legalEntity->id,
-                    'addressable_type' => MorphMapByClass(model: LegalEntity::class),
-                ]);
-        });
+        return $this->afterCreating(
+            function (LegalEntity $legalEntity): void {
+                // Create an Address related to the LegalEntity
+                Address::factory()
+                    ->create([
+                        'addressable_id'   => $legalEntity->id,
+                        'addressable_type' => MorphMapByClass(model: LegalEntity::class),
+                    ]);
+            }
+        );
     }
 }

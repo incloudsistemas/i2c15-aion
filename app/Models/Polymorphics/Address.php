@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Cviebrock\EloquentSluggable\Sluggable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Address extends Model
 {
@@ -40,9 +41,9 @@ class Address extends Model
         'uf'      => UfEnum::class
     ];
 
-    public function addressable(): MorphTo
+    protected static function booted(): void
     {
-        return $this->morphTo();
+        static::observe(AddressObserver::class);
     }
 
     public function sluggable(): array
@@ -57,82 +58,83 @@ class Address extends Model
     }
 
     /**
-     * EVENT LISTENER.
+     * RELATIONSHIPS.
      *
      */
 
-    protected static function boot()
+    public function addressable(): MorphTo
     {
-        parent::boot();
-        self::observe(AddressObserver::class);
+        return $this->morphTo();
     }
-
-    /**
-     * SCOPES.
-     *
-     */
-
-    /**
-     * MUTATORS.
-     *
-     */
 
     /**
      * CUSTOMS.
      *
      */
 
-    public function getDisplayFullAddressAttribute(): ?string
+    protected function displayFullAddress(): Attribute
     {
-        $components = [];
+        return Attribute::get(
+            function (): ?string {
+                $components = [];
 
-        if (!empty(trim($this->address_line))) {
-            $components[] = trim($this->address_line);
-        }
+                if (!empty(trim($this->address_line))) {
+                    $components[] = trim($this->address_line);
+                }
 
-        if (!empty(trim($this->number))) {
-            $components[] = trim($this->number);
-        }
+                if (!empty(trim($this->number))) {
+                    $components[] = trim($this->number);
+                }
 
-        if (!empty(trim($this->complement))) {
-            $components[] = trim($this->complement);
-        }
+                if (!empty(trim($this->complement))) {
+                    $components[] = trim($this->complement);
+                }
 
-        if (!empty(trim($this->district))) {
-            $components[] = trim($this->district);
-        }
+                if (!empty(trim($this->district))) {
+                    $components[] = trim($this->district);
+                }
 
-        if (!empty(trim($this->city))) {
-            $components[] = trim($this->city);
+                if (!empty(trim($this->city))) {
+                    $components[] = trim($this->city);
 
-            if (!empty($this->uf)) {
-                $components[] = trim($this->uf->name);
+                    if (!empty($this->uf)) {
+                        $components[] = trim($this->uf->name);
+                    }
+                }
+
+                if (!empty(trim($this->zipcode))) {
+                    $components[] = trim($this->zipcode);
+                }
+
+                $address = implode(', ', $components);
+
+                return $address !== '' ? $address : null;
             }
-        }
-
-        if (!empty(trim($this->zipcode))) {
-            $components[] = $this->zipcode;
-        }
-
-        return implode(', ', $components);
+        );
     }
 
-    public function getDisplayShortAddressAttribute(): ?string
+    protected function displayShortAddress(): Attribute
     {
-        $components = [];
+        return Attribute::get(
+            function (): ?string {
+                $components = [];
 
-        if (!empty(trim($this->address_line))) {
-            $components[] = trim($this->address_line);
-        }
+                if (!empty(trim($this->address_line))) {
+                    $components[] = trim($this->address_line);
+                }
 
-        if (!empty(trim($this->number))) {
-            $components[] = trim($this->number);
-        }
+                if (!empty(trim($this->number))) {
+                    $components[] = trim($this->number);
+                }
 
-        if (!empty(trim($this->district))) {
-            $components[] = trim($this->district);
-        }
+                if (!empty(trim($this->district))) {
+                    $components[] = trim($this->district);
+                }
 
-        return implode(', ', $components);
+                $short = implode(', ', $components);
+
+                return $short !== '' ? $short : null;
+            }
+        );
     }
 }

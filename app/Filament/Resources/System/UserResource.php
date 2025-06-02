@@ -447,6 +447,11 @@ class UserResource extends Resource
     protected static function getTableColumns(): array
     {
         return [
+            Tables\Columns\TextColumn::make('id')
+                ->label(__('#ID'))
+                ->searchable()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\SpatieMediaLibraryImageColumn::make('avatar')
                 ->label('')
                 ->collection('avatar')
@@ -486,11 +491,11 @@ class UserResource extends Resource
                 ->badge()
                 ->searchable(
                     query: fn(UserService $service, Builder $query, string $search): Builder =>
-                    $service->tableSearchByStatus(query: $query, search: $search)
+                    $service->tableSearchByStatus(query: $query, search: $search, enumClass: UserStatusEnum::class)
                 )
                 ->sortable(
                     query: fn(UserService $service, Builder $query, string $direction): Builder =>
-                    $service->tableSortByStatus(query: $query, direction: $direction)
+                    $service->tableSortByStatus(query: $query, direction: $direction, enumClass: UserStatusEnum::class)
                 )
                 ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\TextColumn::make('created_at')
@@ -604,6 +609,8 @@ class UserResource extends Resource
                     ->tabs([
                         Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
                             ->schema([
+                                Infolists\Components\TextEntry::make('id')
+                                    ->label(__('#ID')),
                                 Infolists\Components\SpatieMediaLibraryImageEntry::make('avatar')
                                     ->label(__('Avatar'))
                                     ->hiddenLabel()

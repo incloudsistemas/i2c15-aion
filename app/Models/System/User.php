@@ -9,14 +9,20 @@ use App\Enums\ProfileInfos\EducationalLevelEnum;
 use App\Enums\ProfileInfos\GenderEnum;
 use App\Enums\ProfileInfos\MaritalStatusEnum;
 use App\Enums\ProfileInfos\UserStatusEnum;
+use App\Models\Crm\Business\Business;
+use App\Models\Crm\Business\Interaction;
 use App\Models\Crm\Contacts\Contact;
+use App\Models\Polymorphics\Activity;
 use App\Models\Polymorphics\Address;
 use App\Observers\System\UserObserver;
 use App\Services\System\RoleService;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -55,29 +61,28 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'remember_token',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
+        'additional_emails' => 'array',
+        'phones'            => 'array',
+        'gender'            => GenderEnum::class,
+        'birth_date'        => DateCast::class,
+        'marital_status'    => MaritalStatusEnum::class,
+        'educational_level' => EducationalLevelEnum::class,
+        'status'            => UserStatusEnum::class,
+    ];
+
+    protected static function booted(): void
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'additional_emails' => 'array',
-            'phones'            => 'array',
-            'gender'            => GenderEnum::class,
-            'birth_date'        => DateCast::class,
-            'marital_status'    => MaritalStatusEnum::class,
-            'educational_level' => EducationalLevelEnum::class,
-            'status'            => UserStatusEnum::class,
-        ];
+        static::observe(UserObserver::class);
     }
 
-    public function contacts(): HasMany
+    public function registerMediaConversions(?Media $media = null): void
     {
-        return $this->hasMany(related: Contact::class);
-    }
-
-    public function address(): MorphOne
-    {
-        return $this->morphOne(related: Address::class, name: 'addressable');
+        $this->addMediaConversion('thumb')
+            ->fit(Fit::Crop, 150, 150)
+            ->nonQueued();
     }
 
     public function canAccessPanel(Panel $panel): bool
@@ -90,22 +95,45 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         return true;
     }
 
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->fit(Fit::Crop, 150, 150)
-            ->nonQueued();
-    }
-
     /**
-     * EVENT LISTENER.
+     * RELATIONSHIPS.
      *
      */
 
-    protected static function boot()
+    public function activity(): HasMany
     {
-        parent::boot();
-        self::observe(UserObserver::class);
+        return $this->hasMany(related: Activity::class, foreignKey: 'user_id');
+    }
+
+    public function businessInteractions(): HasMany
+    {
+        return $this->hasMany(related: Interaction::class, foreignKey: 'user_id');
+    }
+
+    public function business(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            related: Business::class,
+            table: 'crm_business_user',
+            foreignPivotKey: 'user_id',
+            relatedPivotKey: 'business_id'
+        )
+            ->withPivot(columns: 'business_at');
+    }
+
+    public function ownBusiness(): HasMany
+    {
+        return $this->hasMany(related: Business::class, foreignKey: 'user_id');
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(related: Contact::class);
+    }
+
+    public function address(): MorphOne
+    {
+        return $this->morphOne(related: Address::class, name: 'addressable');
     }
 
     /**
@@ -117,18 +145,22 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     {
         $rolesToAvoid = RoleService::getArrayOfRolesToAvoidByAuthUserRoles(user: $user);
 
-        return $query->whereHas('roles', function (Builder $query) use ($rolesToAvoid): Builder {
-            return $query->whereNotIn('id', $rolesToAvoid);
-        });
+        return $query->whereHas(
+            'roles',
+            fn(Builder $query): Builder =>
+            $query->whereNotIn('id', $rolesToAvoid)
+        );
     }
 
     public function scopeWhereHasRolesAvoidingClients(Builder $query): Builder
     {
         $rolesToAvoid = [2]; // 2 - Cliente
 
-        return $query->whereHas('roles', function (Builder $query) use ($rolesToAvoid): Builder {
-            return $query->whereNotIn('id', $rolesToAvoid);
-        });
+        return $query->whereHas(
+            'roles',
+            fn(Builder $query): Builder =>
+            $query->whereNotIn('id', $rolesToAvoid)
+        );
     }
 
     public function scopeByStatuses(Builder $query, array $statuses = [1]): Builder
@@ -138,97 +170,84 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     }
 
     /**
-     * MUTATORS.
-     *
-     */
-
-    /**
      * CUSTOMS.
      *
      */
 
-    public function getDisplayAdditionalEmailsAttribute(): ?array
+    protected function displayAdditionalEmails(): Attribute
     {
-        $additionalEmails = [];
-
-        if (isset($this->additional_emails[0])) {
-            foreach ($this->additional_emails as $email) {
-                $additionalEmail = $email['email'];
-
-                if (!empty($email['name'])) {
-                    $additionalEmail .= " ({$email['name']})";
-                }
-
-                $additionalEmails[] = $additionalEmail;
-            }
-        }
-
-        return !empty($additionalEmails) ? $additionalEmails : null;
+        return Attribute::get(
+            fn(): ?array =>
+            collect($this->additional_emails ?? [])
+                ->filter(
+                    fn(array $email): bool =>
+                    !empty($email['email'])
+                )
+                ->map(
+                    fn(array $email): string =>
+                    $email['email'] . (!empty($email['name']) ? " ({$email['name']})" : '')
+                )
+                ->values()
+                ->all() ?: null
+        );
     }
 
-    public function getDisplayMainPhoneAttribute(): ?string
+    protected function displayMainPhone(): Attribute
     {
-        return $this->phones[0]['number'] ?? null;
+        return Attribute::get(
+            fn(): ?string =>
+            $this->phones[0]['number'] ?? null
+        );
     }
 
-    public function getDisplayMainPhoneWithNameAttribute(): ?string
+    protected function displayMainPhoneWithName(): Attribute
     {
-        if (isset($this->phones[0]['number'])) {
-            $mainPhone = $this->phones[0]['number'];
-            $phoneName = $this->phones[0]['name'] ?? null;
-
-            if (!empty($phoneName)) {
-                $mainPhone .= " ({$phoneName})";
-            }
-
-            return $mainPhone;
-        }
-
-        return null;
+        return Attribute::get(
+            fn(): ?string =>
+            isset($this->phones[0]['number'])
+                ? $this->phones[0]['number'] . (!empty($this->phones[0]['name']) ? " ({$this->phones[0]['name']})" : '')
+                : null
+        );
     }
 
-    public function getDisplayAdditionalPhonesAttribute(): ?array
+    protected function displayAdditionalPhones(): Attribute
     {
-        $additionalPhones = [];
-
-        if (isset($this->phones[1]['number'])) {
-            foreach (array_slice($this->phones, 1) as $phone) {
-                $additionalPhone = $phone['number'];
-
-                if (!empty($phone['name'])) {
-                    $additionalPhone .= " ({$phone['name']})";
-                }
-
-                $additionalPhones[] = $additionalPhone;
-            }
-        }
-
-        return !empty($additionalPhones) ? $additionalPhones : null;
+        return Attribute::get(
+            fn(): ?array =>
+            collect($this->phones ?? [])
+                ->slice(1)
+                ->map(
+                    fn(array $phone): string =>
+                    $phone['number'] . (!empty($phone['name']) ? " ({$phone['name']})" : '')
+                )
+                ->values()
+                ->all() ?: null
+        );
     }
 
-    public function getDisplayBirthDateAttribute(): ?string
+    protected function displayBirthDate(): Attribute
     {
-        return isset($this->birth_date)
-            ? ConvertEnToPtBrDate(date: $this->birth_date)
-            : null;
+        return Attribute::get(
+            fn(): ?string =>
+            $this->birth_date ? ConvertEnToPtBrDate(date: $this->birth_date) : null
+        );
     }
 
-    public function getFeaturedImageAttribute(): ?Media
+    protected function featuredImage(): Attribute
     {
-        $featuredImage = $this->getFirstMedia('avatar');
-
-        if (!$featuredImage) {
-            $featuredImage = $this->getFirstMedia('images');
-        }
-
-        return $featuredImage ?? null;
+        return Attribute::get(
+            fn(): ?Media =>
+            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images')
+        );
     }
 
-    public function getAttachmentsAttribute()
+    protected function attachments(): Attribute
     {
-        $attachments = $this->getMedia('attachments')
-            ->sortBy('order_column');
-
-        return $attachments->isEmpty() ? null : $attachments;
+        return Attribute::get(
+            fn(): ?Collection =>
+            $this->getMedia('attachments')
+                ->sortBy('order_column')
+                ->whenEmpty(fn() => null)
+        );
     }
 }

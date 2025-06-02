@@ -12,15 +12,9 @@ class Role extends RoleModel
 {
     use HasFactory;
 
-    /**
-     * EVENT LISTENER.
-     *
-     */
-
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
-        self::observe(RoleObserver::class);
+        static::observe(RoleObserver::class);
     }
 
     /**
@@ -34,14 +28,4 @@ class Role extends RoleModel
 
         return $query->whereNotIn('id', $rolesToAvoid);
     }
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
 }

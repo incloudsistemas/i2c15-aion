@@ -83,7 +83,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->forgetCachedPermissions();
     }
 
-    private function forceCreateRolesPermission()
+    protected function forceCreateRolesPermission()
     {
         $permissionNames = [
             'Cadastrar Níveis de Acessos',
@@ -99,12 +99,12 @@ class RolesAndPermissionsSeeder extends Seeder
         }
     }
 
-    private function forgetCachedPermissions(): void
+    protected function forgetCachedPermissions(): void
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
-    private function truncatePermissionTables()
+    protected function truncatePermissionTables()
     {
         $this->command->info('Truncating Roles and Permissions tables');
         Schema::disableForeignKeyConstraints();

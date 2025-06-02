@@ -434,6 +434,11 @@ class IndividualResource extends Resource
     protected static function getTableColumns(): array
     {
         return [
+            Tables\Columns\TextColumn::make('contact.id')
+                ->label(__('#ID'))
+                ->searchable()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\SpatieMediaLibraryImageColumn::make('avatar')
                 ->label('')
                 ->collection('avatar')
@@ -477,7 +482,7 @@ class IndividualResource extends Resource
                 ->label(__('Captador'))
                 ->searchable()
                 ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\TextColumn::make('contact.status')
                 ->label(__('Status'))
                 ->badge()
@@ -513,8 +518,6 @@ class IndividualResource extends Resource
                 ->relationship(
                     name: 'contact.roles',
                     titleAttribute: 'name',
-                    modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByRolesWhereHasContacts(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -523,8 +526,6 @@ class IndividualResource extends Resource
                 ->relationship(
                     name: 'contact.source',
                     titleAttribute: 'name',
-                    modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryBySourcesWhereHasContacts(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -534,7 +535,7 @@ class IndividualResource extends Resource
                     name: 'contact.owner',
                     titleAttribute: 'name',
                     modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByOwnersWhereHasContacts(query: $query),
+                    $service->getQueryByElementsWhereHasContactsBasedOnAuthRoles(query: $query),
                 )
                 ->multiple()
                 ->preload(),
@@ -625,6 +626,8 @@ class IndividualResource extends Resource
                     ->tabs([
                         Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
                             ->schema([
+                                Infolists\Components\TextEntry::make('contact.id')
+                                    ->label(__('#ID')),
                                 Infolists\Components\SpatieMediaLibraryImageEntry::make('avatar')
                                     ->label(__('Avatar'))
                                     ->hiddenLabel()
@@ -693,6 +696,18 @@ class IndividualResource extends Resource
                                     ),
                                 Infolists\Components\TextEntry::make('occupation')
                                     ->label(__('Cargo'))
+                                    ->visible(
+                                        fn(?string $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('contact.source.name')
+                                    ->label(__('Origem'))
+                                    ->visible(
+                                        fn(?string $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('contact.owner.name')
+                                    ->label(__('Captador'))
                                     ->visible(
                                         fn(?string $state): bool =>
                                         !empty($state),
@@ -841,9 +856,7 @@ class IndividualResource extends Resource
         //     });
         // }
 
-        return $query->whereHas('contact', function (Builder $query) use ($user): Builder {
-            return $query->where('user_id', $user->id);
-        });
+        return $query->whereHas('contact', fn(Builder $query): Builder => $query->where('user_id', $user->id));
     }
 
     public static function getGloballySearchableAttributes(): array

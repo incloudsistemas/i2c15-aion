@@ -16,42 +16,6 @@ class RoleService extends BaseService
         parent::__construct();
     }
 
-    public function tableSearchByStatus(Builder $query, string $search): Builder
-    {
-        $statuses = DefaultStatusEnum::getAssociativeArray();
-
-        $matchingStatuses = [];
-        foreach ($statuses as $index => $status) {
-            if (stripos($status, $search) !== false) {
-                $matchingStatuses[] = $index;
-            }
-        }
-
-        if ($matchingStatuses) {
-            return $query->whereIn('status', $matchingStatuses);
-        }
-
-        return $query;
-    }
-
-    public function tableSortByStatus(Builder $query, string $direction): Builder
-    {
-        $statuses = DefaultStatusEnum::getAssociativeArray();
-
-        $caseParts = [];
-        $bindings = [];
-
-        foreach ($statuses as $key => $status) {
-            $caseParts[] = "WHEN ? THEN ?";
-            $bindings[] = $key;
-            $bindings[] = $status;
-        }
-
-        $orderByCase = "CASE status " . implode(' ', $caseParts) . " END";
-
-        return $query->orderByRaw("$orderByCase $direction", $bindings);
-    }
-
     public function getQueryByRoles(Builder $query): Builder
     {
         return $query->byStatuses(statuses: [1]); // 1 - Ativo

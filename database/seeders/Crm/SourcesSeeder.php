@@ -33,19 +33,16 @@ class SourcesSeeder extends Seeder
         ];
 
         foreach ($sources as $source) {
-            DB::table('crm_sources')->insert([
-                'name'       => $source,
-                'slug'       => Str::slug($source),
-                'created_at' => now(),
-                'updated_at' => now()
+            Source::create([
+                'name' => $source,
             ]);
         }
 
-        Source::factory(30)
-            ->create();
+        // Source::factory(30)
+        //     ->create();
     }
 
-    private function truncateTable()
+    protected function truncateTable()
     {
         $this->command->info('Truncating CRM Source table');
         Schema::disableForeignKeyConstraints();

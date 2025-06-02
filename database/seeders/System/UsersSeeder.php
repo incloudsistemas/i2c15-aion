@@ -38,7 +38,11 @@ class UsersSeeder extends Seeder
         User::factory(30)
             ->create()
             ->each(function ($user) {
-                $user->syncRoles(['Administrador']);
+                $role = Role::where('id', '!=', 1) // 1 - Superadmin
+                    ->inRandomOrder()
+                    ->first();
+
+                $user->syncRoles([$role->name]);
             });
     }
 

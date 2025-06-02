@@ -50,14 +50,16 @@ class ContactFactory extends Factory
      */
     public function configure()
     {
-        return $this->afterCreating(function (Contact $contact) {
-            // Attach one or more existing Roles to the Contact
-            $roles = Role::inRandomOrder()
-                ->limit(rand(1, 3))
-                ->pluck('id');
+        return $this->afterCreating(
+            function (Contact $contact): void {
+                // Attach one or more existing Roles to the Contact
+                $roles = Role::inRandomOrder()
+                    ->limit(rand(1, 3))
+                    ->pluck('id');
 
-            $contact->roles()
-                ->attach($roles);
-        });
+                $contact->roles()
+                    ->attach($roles);
+            }
+        );
     }
 }

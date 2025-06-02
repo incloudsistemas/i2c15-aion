@@ -10,29 +10,8 @@ class Permission extends PermissionModel
 {
     use HasFactory;
 
-    /**
-     * EVENT LISTENER.
-     *
-     */
-
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
-        self::observe(PermissionObserver::class);
+        static::observe(PermissionObserver::class);
     }
-
-    /**
-     * SCOPES.
-     *
-     */
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
 }

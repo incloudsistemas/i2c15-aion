@@ -25,7 +25,13 @@ class IndividualFactory extends Factory
             'gender'     => $this->faker->optional()->randomElement(['M', 'F']),
             'birth_date' => $this->faker->dateTimeBetween('-80 years', '-18 years')->format('d/m/Y'),
             'occupation' => $this->faker->optional()->randomElement([
-                'Sócio/Dono', 'Diretor', 'Gerente/Coordenador', 'Auxiliar/Assistente', 'Consultor', 'Autônomo', 'Outros'
+                'Sócio/Dono',
+                'Diretor',
+                'Gerente/Coordenador',
+                'Auxiliar/Assistente',
+                'Consultor',
+                'Autônomo',
+                'Outros'
             ]),
         ];
     }
@@ -36,13 +42,15 @@ class IndividualFactory extends Factory
      */
     public function configure()
     {
-        return $this->afterCreating(function (Individual $individual) {
-            // Create an Address related to the Individual
-            Address::factory()
-                ->create([
-                    'addressable_id'   => $individual->id,
-                    'addressable_type' => MorphMapByClass(model: Individual::class),
-                ]);
-        });
+        return $this->afterCreating(
+            function (Individual $individual): void {
+                // Create an Address related to the Individual
+                Address::factory()
+                    ->create([
+                        'addressable_id'   => $individual->id,
+                        'addressable_type' => MorphMapByClass(model: Individual::class),
+                    ]);
+            }
+        );
     }
 }

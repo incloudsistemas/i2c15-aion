@@ -3,6 +3,7 @@
 namespace App\Models\Crm;
 
 use App\Enums\DefaultStatusEnum;
+use App\Models\Crm\Business\Business;
 use App\Models\Crm\Contacts\Contact;
 use App\Observers\Crm\SourceObserver;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -25,21 +26,13 @@ class Source extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'status' => DefaultStatusEnum::class,
-        ];
-    }
+    protected $casts = [
+        'status' => DefaultStatusEnum::class,
+    ];
 
-    // public function business(): HasMany
-    // {
-    //     return $this->hasMany(related: Business::class, foreignKey: 'source_id');
-    // }
-
-    public function contacts(): HasMany
+    protected static function booted(): void
     {
-        return $this->hasMany(related: Contact::class, foreignKey: 'source_id');
+        static::observe(SourceObserver::class);
     }
 
     public function sluggable(): array
@@ -57,14 +50,18 @@ class Source extends Model
     }
 
     /**
-     * EVENT LISTENER.
+     * RELATIONSHIPS.
      *
      */
 
-    protected static function boot()
+    public function business(): HasMany
     {
-        parent::boot();
-        self::observe(SourceObserver::class);
+        return $this->hasMany(related: Business::class, foreignKey: 'source_id');
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(related: Contact::class, foreignKey: 'source_id');
     }
 
     /**
@@ -76,14 +73,4 @@ class Source extends Model
     {
         return $query->whereIn('status', $statuses);
     }
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
 }

@@ -46,13 +46,12 @@ class LegalEntityService extends BaseService
 
         return $this->legalEntity->with('contact')
             ->whereHas('contact', function (Builder $query) use ($user, $search): Builder {
-                $query->where('status', 1); // 1 - Ativo
-
-                if (!empty($search)) {
-                    $query->where(function ($query) use ($search) {
-                        $query->where('name', 'like', "%{$search}%");
+                $query->where('status', 1) // 1 - Ativo
+                    ->when(!empty($search), function (Builder $query) use ($search): Builder {
+                        return $query->where(function (Builder $query) use ($search): Builder {
+                            return $query->where('name', 'like', "%{$search}%");
+                        });
                     });
-                }
 
                 if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
                     return $query;
@@ -62,7 +61,10 @@ class LegalEntityService extends BaseService
             })
             ->when(!empty($search), function (Builder $query) use ($search): Builder {
                 return $query->orWhere('cnpj', 'like', "%{$search}%")
-                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '-', ''), '/', '') LIKE ?", ["%{$search}%"]);
+                    ->orWhereRaw(
+                        "REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '-', ''), '/', '') LIKE ?",
+                        ["%{$search}%"]
+                    );
             })
             ->limit(50)
             ->get()

@@ -28,8 +28,8 @@ return new class extends Migration
             $table->string('sector')->nullable();
             //  Nº de funcionários
             $table->string('num_employees')->nullable();
-            // Receita anual
-            $table->bigInteger('anual_income')->nullable();
+            // Faturamento mensal
+            $table->string('monthly_income')->nullable();
             $table->softDeletes();
         });
     }

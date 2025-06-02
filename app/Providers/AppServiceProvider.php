@@ -32,12 +32,17 @@ class AppServiceProvider extends ServiceProvider
             'crm_contact_individuals'    => 'App\Models\Crm\Contacts\Individual',
             'crm_contact_legal_entities' => 'App\Models\Crm\Contacts\LegalEntity',
 
-            // 'crm_funnels'                => 'App\Models\Crm\Funnels\Funnel',
-            // 'crm_funnel_stages'          => 'App\Models\Crm\Funnels\FunnelStage',
-            // 'crm_funnel_substages'       => 'App\Models\Crm\Funnels\FunnelSubstage',
-            // 'crm_business'               => 'App\Models\Crm\Business\Business',
-            // 'crm_business_funnel_stages' => 'App\Models\Crm\Business\FunnelStage',
-            // 'crm_queues'                 => 'App\Models\Crm\Queues\Queue',
+            'crm_funnels'                => 'App\Models\Crm\Funnels\Funnel',
+            'crm_funnel_stages'          => 'App\Models\Crm\Funnels\FunnelStage',
+            'crm_funnel_substages'       => 'App\Models\Crm\Funnels\FunnelSubstage',
+            'crm_business'               => 'App\Models\Crm\Business\Business',
+            'crm_business_funnel_stages' => 'App\Models\Crm\Business\FunnelStage',
+            'crm_business_interactions'  => 'App\Models\Crm\Business\Interaction',
+            'crm_business_activities'    => 'App\Models\Crm\Business\Activity',
+
+            // 'financial_bank_accounts'     => 'App\Models\Financial\BankAccount',
+            // 'financial_transactions'      => 'App\Models\Financial\Transaction',
+            // 'financial_categories'        => 'App\Models\Financial\Category',
 
             // 'cms_posts'                 => 'App\Models\Cms\Post',
             // 'cms_pages'                 => 'App\Models\Cms\Page',
@@ -50,7 +55,8 @@ class AppServiceProvider extends ServiceProvider
             // 'cms_post_categories'       => 'App\Models\Cms\PostCategory',
             // 'cms_post_sliders'          => 'App\Models\Cms\PostSlider',
 
-            'addresses' => 'App\Models\Polymorphics\Address',
+            'addresses'  => 'App\Models\Polymorphics\Address',
+            'activities' => 'App\Models\Polymorphics\Activity',
         ]);
     }
 }

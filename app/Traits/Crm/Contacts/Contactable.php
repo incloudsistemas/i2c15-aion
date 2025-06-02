@@ -4,6 +4,8 @@ namespace App\Traits\Crm\Contacts;
 
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Polymorphics\Address;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -16,6 +18,18 @@ trait Contactable
 {
     use HasFactory, InteractsWithMedia, SoftDeletes;
 
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->fit(Fit::Crop, 150, 150)
+            ->nonQueued();
+    }
+
+    /**
+     * RELATIONSHIPS.
+     *
+     */
+
     public function addresses(): MorphMany
     {
         return $this->morphMany(related: Address::class, name: 'addressable');
@@ -26,44 +40,33 @@ trait Contactable
         return $this->morphOne(related: Contact::class, name: 'contactable');
     }
 
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->fit(Fit::Crop, 150, 150)
-            ->nonQueued();
-    }
-
-    /**
-     * SCOPES.
-     *
-     */
-
-    /**
-     * MUTATORS.
-     *
-     */
-
     /**
      * CUSTOMS.
      *
      */
 
-    public function getFeaturedImageAttribute(): ?Media
+    public function getMainAddressAttribute(): ?Address
     {
-        $featuredImage = $this->getFirstMedia('avatar');
-
-        if (!$featuredImage) {
-            $featuredImage = $this->getFirstMedia('images');
-        }
-
-        return $featuredImage ?? null;
+        return $this->addresses()
+            ->orderByDesc('is_main')
+            ->first();
     }
 
-    public function getAttachmentsAttribute()
+    protected function featuredImage(): Attribute
     {
-        $attachments = $this->getMedia('attachments')
-            ->sortBy('order_column');
+        return Attribute::get(
+            fn(): ?Media =>
+            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images')
+        );
+    }
 
-        return $attachments->isEmpty() ? null : $attachments;
+    protected function attachments(): Attribute
+    {
+        return Attribute::get(
+            fn(): ?Collection =>
+            $this->getMedia('attachments')
+                ->sortBy('order_column')
+                ->whenEmpty(fn() => null)
+        );
     }
 }

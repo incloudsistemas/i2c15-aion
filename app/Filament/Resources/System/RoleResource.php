@@ -239,6 +239,8 @@ class RoleResource extends Resource
     {
         return $infolist
             ->schema([
+                Infolists\Components\TextEntry::make('id')
+                    ->label(__('#ID')),
                 Infolists\Components\TextEntry::make('name')
                     ->label(__('Nome')),
                 Infolists\Components\Grid::make(['default' => 3])

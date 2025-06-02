@@ -36,7 +36,13 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        return $user->hasPermissionTo(permission: 'Editar Usuários');
+        $hasPermission = $user->hasPermissionTo(permission: 'Editar Usuários');
+
+        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
+            return $hasPermission;
+        }
+
+        return $hasPermission && !$model->hasAnyRole(['Superadministrador', 'Administrador']);
     }
 
     /**
@@ -48,7 +54,13 @@ class UserPolicy
             return false;
         }
 
-        return $user->hasPermissionTo(permission: 'Deletar Usuários');
+        $hasPermission = $user->hasPermissionTo(permission: 'Deletar Usuários');
+
+        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
+            return $hasPermission;
+        }
+
+        return $hasPermission && !$model->hasAnyRole(['Superadministrador', 'Administrador']);
     }
 
     /**

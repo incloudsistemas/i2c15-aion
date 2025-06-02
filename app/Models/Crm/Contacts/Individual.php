@@ -6,6 +6,7 @@ use App\Casts\DateCast;
 use App\Enums\ProfileInfos\GenderEnum;
 use App\Observers\Crm\Contacts\IndividualObserver;
 use App\Traits\Crm\Contacts\Contactable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
@@ -26,13 +27,20 @@ class Individual extends Model implements HasMedia
         'occupation',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'gender'     => GenderEnum::class,
+        'birth_date' => DateCast::class
+    ];
+
+    protected static function booted(): void
     {
-        return [
-            'gender'     => GenderEnum::class,
-            'birth_date' => DateCast::class
-        ];
+        static::observe(IndividualObserver::class);
     }
+
+    /**
+     * RELATIONSHIPS.
+     *
+     */
 
     public function legalEntities(): BelongsToMany
     {
@@ -45,35 +53,15 @@ class Individual extends Model implements HasMedia
     }
 
     /**
-     * EVENT LISTENER.
-     *
-     */
-
-    protected static function boot()
-    {
-        parent::boot();
-        self::observe(IndividualObserver::class);
-    }
-
-    /**
-     * SCOPES.
-     *
-     */
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
      * CUSTOMS.
      *
      */
 
-    public function getDisplayBirthDateAttribute(): ?string
+    protected function displayBirthDate(): Attribute
     {
-        return isset($this->birth_date)
-            ? ConvertEnToPtBrDate(date: $this->birth_date)
-            : null;
+        return Attribute::get(
+            fn(): ?string =>
+            $this->birth_date ? ConvertEnToPtBrDate(date: $this->birth_date) : null
+        );
     }
 }

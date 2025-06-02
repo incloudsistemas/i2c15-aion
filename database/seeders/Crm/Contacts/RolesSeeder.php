@@ -28,20 +28,16 @@ class RolesSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            DB::table('crm_contact_roles')
-                ->insert([
-                    'name'       => $role,
-                    'slug'       => Str::slug($role),
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+            Role::create([
+                'name' => $role,
+            ]);
         }
 
-        Role::factory(10)
-            ->create();
+        // Role::factory(10)
+        //     ->create();
     }
 
-    private function truncateTable()
+    protected function truncateTable()
     {
         $this->command->info('Truncating CRM Contact Role table');
         Schema::disableForeignKeyConstraints();

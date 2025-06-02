@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DefaultStatusEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
@@ -26,8 +27,64 @@ abstract class BaseService
         ];
     }
 
+    public function tableSearchByStatus(
+        Builder $query,
+        string $search,
+        string $enumClass = DefaultStatusEnum::class,
+        string $columnName = 'status',
+    ): Builder {
+        if (!class_exists($enumClass) || !method_exists($enumClass, 'getAssociativeArray')) {
+            return $query;
+        }
+
+        $statuses = $enumClass::getAssociativeArray();
+
+        $matchingStatuses = [];
+        foreach ($statuses as $index => $status) {
+            if (stripos($status, $search) !== false) {
+                $matchingStatuses[] = $index;
+            }
+        }
+
+        if ($matchingStatuses) {
+            return $query->whereIn($columnName, $matchingStatuses);
+        }
+
+        return $query;
+    }
+
+    public function tableSortByStatus(
+        Builder $query,
+        string $direction,
+        string $enumClass = DefaultStatusEnum::class,
+        string $columnName = 'status',
+    ): Builder {
+        if (!class_exists($enumClass) || !method_exists($enumClass, 'getAssociativeArray')) {
+            return $query;
+        }
+
+        $statuses = $enumClass::getAssociativeArray();
+
+        $caseParts = [];
+        $bindings = [];
+
+        foreach ($statuses as $key => $status) {
+            $caseParts[] = "WHEN ? THEN ?";
+            $bindings[] = $key;
+            $bindings[] = $status;
+        }
+
+        $orderByCase = "CASE {$columnName} " . implode(' ', $caseParts) . " END";
+
+        return $query->orderByRaw("$orderByCase $direction", $bindings);
+    }
+
     public function tableFilterByCreatedAt(Builder $query, array $data): Builder
     {
+        if (!$data['created_from'] && !$data['created_until']) {
+            return $query;
+        }
+
         return $query
             ->when(
                 $data['created_from'],
@@ -48,6 +105,10 @@ abstract class BaseService
 
     public function tableFilterByUpdatedAt(Builder $query, array $data): Builder
     {
+        if (!$data['updated_from'] && !$data['updated_until']) {
+            return $query;
+        }
+
         return $query
             ->when(
                 $data['updated_from'],

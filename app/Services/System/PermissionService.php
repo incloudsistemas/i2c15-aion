@@ -5,7 +5,6 @@ namespace App\Services\System;
 use App\Models\System\Permission;
 use App\Services\BaseService;
 use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class PermissionService extends BaseService

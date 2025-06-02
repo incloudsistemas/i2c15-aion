@@ -2,8 +2,13 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Crm\Business\BusinessSeeder;
 use Database\Seeders\Crm\Contacts\ContactsSeeder;
 use Database\Seeders\Crm\Contacts\RolesSeeder as ContactRolesSeeder;
+use Database\Seeders\Crm\Funnels\DefaultFunnelsSeeder;
+use Database\Seeders\Crm\Funnels\FunnelsSeeder;
+use Database\Seeders\Crm\Funnels\FunnelStagesSeeder;
+use Database\Seeders\Crm\Funnels\FunnelSubstagesSeeder;
 use Database\Seeders\Crm\SourcesSeeder;
 use Database\Seeders\System\RolesAndPermissionsSeeder;
 use Database\Seeders\System\UsersSeeder;
@@ -24,6 +29,11 @@ class DatabaseSeeder extends Seeder
             ContactRolesSeeder::class,
             SourcesSeeder::class,
             ContactsSeeder::class,
+            // FunnelsSeeder::class,
+            // FunnelStagesSeeder::class,
+            // FunnelSubstagesSeeder::class,
+            DefaultFunnelsSeeder::class,
+            BusinessSeeder::class,
         ]);
     }
 }

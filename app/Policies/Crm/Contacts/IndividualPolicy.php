@@ -21,27 +21,11 @@ class IndividualPolicy
      */
     public function view(User $user, Individual $individual)
     {
-        if (!$user->hasPermissionTo('Visualizar [CRM] Contatos')) {
+        if (!$user->hasPermissionTo(permission: 'Visualizar [CRM] Contatos')) {
             return false;
         }
 
-        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
-            return true;
-        }
-
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     return $user->teams()
-        //         ->whereHas('users', function (Builder $query) use ($individual): Builder {
-        //             return $query->where('id', $individual->contact->user_id);
-        //         })
-        //         ->exists();
-        // }
-
-        if ($individual->contact->user_id === $user->id) {
-            return true;
-        }
-
-        return false;
+        return $this->checkOwnerAccess(user: $user, individual: $individual);
     }
 
     /**
@@ -57,27 +41,11 @@ class IndividualPolicy
      */
     public function update(User $user, Individual $individual)
     {
-        if (!$user->hasPermissionTo('Editar [CRM] Contatos')) {
+        if (!$user->hasPermissionTo(permission: 'Editar [CRM] Contatos')) {
             return false;
         }
 
-        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
-            return true;
-        }
-
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     return $user->teams()
-        //         ->whereHas('users', function (Builder $query) use ($individual): Builder {
-        //             return $query->where('id', $individual->contact->user_id);
-        //         })
-        //         ->exists();
-        // }
-
-        if ($individual->contact->user_id === $user->id) {
-            return true;
-        }
-
-        return false;
+        return $this->checkOwnerAccess(user: $user, individual: $individual);
     }
 
     /**
@@ -85,27 +53,11 @@ class IndividualPolicy
      */
     public function delete(User $user, Individual $individual)
     {
-        if (!$user->hasPermissionTo('Deletar [CRM] Contatos')) {
+        if (!$user->hasPermissionTo(permission: 'Deletar [CRM] Contatos')) {
             return false;
         }
 
-        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
-            return true;
-        }
-
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     return $user->teams()
-        //         ->whereHas('users', function (Builder $query) use ($individual): Builder {
-        //             return $query->where('id', $individual->contact->user_id);
-        //         })
-        //         ->exists();
-        // }
-
-        if ($individual->contact->user_id === $user->id) {
-            return true;
-        }
-
-        return false;
+        return $this->checkOwnerAccess(user: $user, individual: $individual);
     }
 
     /**
@@ -121,6 +73,27 @@ class IndividualPolicy
      */
     public function forceDelete(User $user, Individual $individual): bool
     {
+        return false;
+    }
+
+    protected function checkOwnerAccess(User $user, Individual $individual): ?bool
+    {
+        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
+            return true;
+        }
+
+        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
+        //     return $user->teams()
+        //         ->whereHas('users', function (Builder $query) use ($individual): Builder {
+        //             return $query->where('id', $individual->contact->user_id);
+        //         })
+        //         ->exists();
+        // }
+
+        if ($individual->contact->user_id === $user->id) {
+            return true;
+        }
+
         return false;
     }
 }

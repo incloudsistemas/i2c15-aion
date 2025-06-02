@@ -44,7 +44,7 @@ class ContactsSeeder extends Seeder
             });
     }
 
-    private function truncateTable()
+    protected function truncateTable()
     {
         $this->command->info('Truncating CRM Contacts, Individuals and LegalEntities tables');
         Schema::disableForeignKeyConstraints();
