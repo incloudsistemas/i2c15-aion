@@ -4,10 +4,16 @@ namespace App\Policies\Crm\Contacts;
 
 use App\Models\Crm\Contacts\LegalEntity;
 use App\Models\System\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Crm\Contacts\ContactService;
+use Illuminate\Auth\Access\Response;
 
 class LegalEntityPolicy
 {
+    public function __construct(protected ContactService $service)
+    {
+        //
+    }
+
     /**
      * Determine whether the user can view any models.
      */
@@ -25,7 +31,7 @@ class LegalEntityPolicy
             return false;
         }
 
-        return $this->checkOwnerAccess(user: $user, legalEntity: $legalEntity);
+        return $this->service->checkOwnerAccess(user: $user, contact: $legalEntity->contact);
     }
 
     /**
@@ -45,7 +51,7 @@ class LegalEntityPolicy
             return false;
         }
 
-        return $this->checkOwnerAccess(user: $user, legalEntity: $legalEntity);
+        return $this->service->checkOwnerAccess(user: $user, contact: $legalEntity->contact);
     }
 
     /**
@@ -57,7 +63,7 @@ class LegalEntityPolicy
             return false;
         }
 
-        return $this->checkOwnerAccess(user: $user, legalEntity: $legalEntity);
+        return $this->service->checkOwnerAccess(user: $user, contact: $legalEntity->contact);
     }
 
     /**
@@ -73,27 +79,6 @@ class LegalEntityPolicy
      */
     public function forceDelete(User $user, LegalEntity $legalEntity): bool
     {
-        return false;
-    }
-
-    protected function checkOwnerAccess(User $user, LegalEntity $legalEntity): ?bool
-    {
-        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
-            return true;
-        }
-
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     return $user->teams()
-        //         ->whereHas('users', function (Builder $query) use ($individual): Builder {
-        //             return $query->where('id', $individual->contact->user_id);
-        //         })
-        //         ->exists();
-        // }
-
-        if ($legalEntity->contact->user_id === $user->id) {
-            return true;
-        }
-
         return false;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Policies\Crm\Contacts;
 
 use App\Models\Crm\Contacts\Role;
 use App\Models\System\User;
+use Illuminate\Auth\Access\Response;
 
 class RolePolicy
 {

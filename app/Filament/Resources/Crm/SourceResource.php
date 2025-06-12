@@ -122,7 +122,7 @@ class SourceResource extends Resource
     {
         return [
             Tables\Columns\TextColumn::make('name')
-                ->label(__('Nome'))
+                ->label(__('Origem'))
                 ->searchable()
                 ->sortable(),
             Tables\Columns\TextColumn::make('status')
@@ -237,7 +237,7 @@ class SourceResource extends Resource
                 Infolists\Components\TextEntry::make('id')
                     ->label(__('#ID')),
                 Infolists\Components\TextEntry::make('name')
-                    ->label(__('Nome')),
+                    ->label(__('Origem')),
                 Infolists\Components\Grid::make(['default' => 3])
                     ->schema([
                         Infolists\Components\TextEntry::make('status')

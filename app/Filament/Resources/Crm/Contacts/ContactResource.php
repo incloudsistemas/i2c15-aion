@@ -10,6 +10,8 @@ use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Contacts\Individual;
 use App\Models\Crm\Contacts\LegalEntity;
 use App\Models\Polymorphics\Address;
+use App\Models\System\Team;
+use App\Models\System\User;
 use App\Services\Crm\Contacts\ContactService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -79,7 +81,6 @@ class ContactResource extends Resource
                             ]),
                         Tables\Actions\EditAction::make()
                             ->label(__('Editar'))
-                            // ->icon('heroicon-m-pencil-square')
                             ->url(
                                 function (Contact $record): string {
                                     if ($record->contactable_type === MorphMapByClass(model: Individual::class)) {
@@ -88,10 +89,6 @@ class ContactResource extends Resource
 
                                     return LegalEntityResource::getUrl('edit', ['record' => $record->contactable]);
                                 }
-                            )
-                            ->hidden(
-                                fn(): bool =>
-                                !auth()->user()->can('Editar [CRM] Contatos'),
                             ),
                     ])
                         ->dropdown(false),
@@ -111,10 +108,6 @@ class ContactResource extends Resource
                                 ->success()
                                 ->title(__('Excluído'))
                                 ->send()
-                        )
-                        ->hidden(
-                            fn(): bool =>
-                            !auth()->user()->can('Deletar [CRM] Contatos'),
                         ),
                 ])
                     ->label(__('Ações'))
@@ -560,9 +553,7 @@ class ContactResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListContacts::route('/'),
-            // 'create' => Pages\CreateContact::route('/create'),
-            // 'edit'   => Pages\EditContact::route('/{record}/edit'),
+            'index' => Pages\ListContacts::route('/'),
         ];
     }
 
@@ -578,18 +569,9 @@ class ContactResource extends Resource
             return $query;
         }
 
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     $teamUserIds = $user->teams()
-        //         ->with('users:id')
-        //         ->get()
-        //         ->pluck('users.*.id')
-        //         ->flatten()
-        //         ->unique()
-        //         ->toArray();
+        $service = app(ContactService::class);
+        $usersIds = $service->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
 
-        //     return $query->whereIn('user_id', $teamUserIds);
-        // }
-
-        return $query->where('user_id', $user->id);
+        return $query->whereIn('user_id', $usersIds);
     }
 }

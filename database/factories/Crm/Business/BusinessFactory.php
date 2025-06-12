@@ -27,7 +27,9 @@ class BusinessFactory extends Factory
     {
         $user = User::inRandomOrder()->first() ?? User::factory()->create();
 
-        $contact = Contact::inRandomOrder()->first() ?? Contact::factory()->create();
+        $contact = $user->contacts()->inRandomOrder()->first()
+            ?? Contact::inRandomOrder()->first()
+            ?? Contact::factory()->create();
 
         $funnel = Funnel::inRandomOrder()->first() ?? Funnel::factory()->create();
 

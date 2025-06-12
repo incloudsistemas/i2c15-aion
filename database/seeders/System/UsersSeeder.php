@@ -37,8 +37,8 @@ class UsersSeeder extends Seeder
 
         User::factory(30)
             ->create()
-            ->each(function ($user) {
-                $role = Role::where('id', '!=', 1) // 1 - Superadmin
+            ->each(function (User $user): void {
+                $role = Role::whereIn('id', [3, 7, 8]) // 3 - Admin, 7 - Financeiro, 8 - Marketing
                     ->inRandomOrder()
                     ->first();
 

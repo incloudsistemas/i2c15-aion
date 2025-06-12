@@ -6,6 +6,7 @@ use App\Enums\ProfileInfos\UserStatusEnum;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Contacts\Individual;
 use App\Models\Crm\Contacts\LegalEntity;
+use App\Models\System\User;
 use App\Services\BaseService;
 use App\Services\Crm\SourceService;
 use Closure;
@@ -304,7 +305,8 @@ class ContactService extends BaseService
             });
 
         if (!$user->hasAnyRole(['Superadministrador', 'Administrador'])) {
-            $query->where('user_id', $user->id);
+            $usersIds = $this->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
+            $query->whereIn('user_id', $usersIds);
         }
 
         return $query->limit(50)
@@ -546,7 +548,10 @@ class ContactService extends BaseService
         foreach ($records as $record) {
             $contact = $record instanceof Contact ? $record : $record->contact;
 
-            if ($this->isAssignedToBusiness(contact: $contact)) {
+            if (
+                !$this->checkOwnerAccess(user: auth()->user(), contact: $contact)
+                || $this->isAssignedToBusiness(contact: $contact)
+            ) {
                 $blocked[] = $contact->name;
                 continue;
             }
@@ -579,6 +584,22 @@ class ContactService extends BaseService
                 ->success()
                 ->send();
         }
+    }
+
+    // Rules for contacts, individuals and Legal Entities
+    public function checkOwnerAccess(User $user, Contact $contact): bool
+    {
+        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
+            return true;
+        }
+
+        if ($contact->user_id === $user->id) {
+            return true;
+        }
+
+        $usersIds = $this->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
+
+        return in_array($contact->user_id, $usersIds);
     }
 
     protected function isAssignedToBusiness(Contact $contact): bool

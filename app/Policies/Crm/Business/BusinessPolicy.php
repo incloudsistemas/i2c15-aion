@@ -4,10 +4,16 @@ namespace App\Policies\Crm\Business;
 
 use App\Models\Crm\Business\Business;
 use App\Models\System\User;
+use App\Services\Crm\Business\BusinessService;
 use Illuminate\Auth\Access\Response;
 
 class BusinessPolicy
 {
+    public function __construct(protected BusinessService $service)
+    {
+        //
+    }
+
     /**
      * Determine whether the user can view any models.
      */
@@ -25,7 +31,7 @@ class BusinessPolicy
             return false;
         }
 
-        return $this->checkOwnerAccess(user: $user, business: $business);
+        return $this->service->checkOwnerAccess(user: $user, business: $business);
     }
 
     /**
@@ -45,7 +51,7 @@ class BusinessPolicy
             return false;
         }
 
-        return $this->checkOwnerAccess(user: $user, business: $business);
+        return $this->service->checkOwnerAccess(user: $user, business: $business);
     }
 
     /**
@@ -57,7 +63,7 @@ class BusinessPolicy
             return false;
         }
 
-        return $this->checkOwnerAccess(user: $user, business: $business);
+        return $this->service->checkOwnerAccess(user: $user, business: $business);
     }
 
     /**
@@ -73,19 +79,6 @@ class BusinessPolicy
      */
     public function forceDelete(User $user, Business $business): bool
     {
-        return false;
-    }
-
-    protected function checkOwnerAccess(User $user, Business $business): ?bool
-    {
-        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
-            return true;
-        }
-
-        if ($business->currentUser->id === $user->id) {
-            return true;
-        }
-
         return false;
     }
 }

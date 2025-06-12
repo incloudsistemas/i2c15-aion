@@ -25,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
             'users'       => 'App\Models\System\User',
             'permissions' => 'App\Models\System\Permission',
             'roles'       => 'App\Models\System\Role',
+            'agencies'    => 'App\Models\System\Agency',
+            'teams'       => 'App\Models\System\Team',
 
             'crm_sources'                => 'App\Models\Crm\Source',
             'crm_contact_roles'          => 'App\Models\Crm\Contacts\Role',

@@ -10,7 +10,9 @@ use Database\Seeders\Crm\Funnels\FunnelsSeeder;
 use Database\Seeders\Crm\Funnels\FunnelStagesSeeder;
 use Database\Seeders\Crm\Funnels\FunnelSubstagesSeeder;
 use Database\Seeders\Crm\SourcesSeeder;
+use Database\Seeders\System\AgenciesSeeder;
 use Database\Seeders\System\RolesAndPermissionsSeeder;
+use Database\Seeders\System\TeamsSeeder;
 use Database\Seeders\System\UsersSeeder;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -25,6 +27,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             UsersSeeder::class,
+            AgenciesSeeder::class,
+            TeamsSeeder::class,
 
             ContactRolesSeeder::class,
             SourcesSeeder::class,

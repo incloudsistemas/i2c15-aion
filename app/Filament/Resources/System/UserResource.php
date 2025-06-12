@@ -475,6 +475,12 @@ class UserResource extends Resource
                 ->searchable()
                 // ->sortable()
                 ->toggleable(isToggledHiddenByDefault: false),
+            Tables\Columns\TextColumn::make('teams.name')
+                ->label(__('Equipe(s)'))
+                ->badge()
+                ->searchable()
+                // ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
             Tables\Columns\TextColumn::make('email')
                 ->label(__('Email'))
                 ->searchable()
@@ -523,6 +529,16 @@ class UserResource extends Resource
                     titleAttribute: 'name',
                     modifyQueryUsing: fn(RoleService $service, Builder $query): Builder =>
                     $service->getQueryByAuthUserRoles(query: $query)
+                )
+                ->multiple()
+                ->preload(),
+            Tables\Filters\SelectFilter::make('teams')
+                ->label(__('Equipe(s)'))
+                ->relationship(
+                    name: 'teams',
+                    titleAttribute: 'name',
+                    modifyQueryUsing: fn(Builder $query): Builder =>
+                    $query->orderBy('name', 'asc')
                 )
                 ->multiple()
                 ->preload(),

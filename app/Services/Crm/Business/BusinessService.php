@@ -4,6 +4,7 @@ namespace App\Services\Crm\Business;
 
 use App\Enums\Crm\Business\PriorityEnum;
 use App\Models\Crm\Business\Business;
+use App\Models\System\User;
 use App\Services\BaseService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
@@ -293,10 +294,10 @@ class BusinessService extends BaseService
         $allowed = [];
 
         foreach ($records as $business) {
-            // if ($this->isAssignedTo??(business: $business)) {
-            //     $blocked[] = $business->name;
-            //     continue;
-            // }
+            if (!$this->checkOwnerAccess(user: auth()->user(), business: $business)) {
+                $blocked[] = $business->name;
+                continue;
+            }
 
             $allowed[] = $business;
         }
@@ -326,5 +327,20 @@ class BusinessService extends BaseService
                 ->success()
                 ->send();
         }
+    }
+
+    public function checkOwnerAccess(User $user, Business $business): bool
+    {
+        if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
+            return true;
+        }
+
+        if ($business->current_user->id === $user->id) {
+            return true;
+        }
+
+        $usersIds = $this->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
+
+        return in_array($business->current_user->id, $usersIds);
     }
 }

@@ -31,19 +31,9 @@ class Funnel extends Model
         'status' => DefaultStatusEnum::class,
     ];
 
-    public function business(): HasMany
+    protected static function booted(): void
     {
-        return $this->hasMany(related: Business::class, foreignKey: 'funnel_id');
-    }
-
-    public function businessFunnelStages(): HasMany
-    {
-        return $this->hasMany(related: BusinessFunnelStage::class, foreignKey: 'funnel_id');
-    }
-
-    public function stages(): HasMany
-    {
-        return $this->hasMany(related: FunnelStage::class, foreignKey: 'funnel_id');
+        static::observe(FunnelObserver::class);
     }
 
     public function sluggable(): array
@@ -61,14 +51,23 @@ class Funnel extends Model
     }
 
     /**
-     * EVENT LISTENERS.
+     * RELATIONSHIPS.
      *
      */
 
-    protected static function boot()
+    public function business(): HasMany
     {
-        parent::boot();
-        self::observe(FunnelObserver::class);
+        return $this->hasMany(related: Business::class, foreignKey: 'funnel_id');
+    }
+
+    public function businessFunnelStages(): HasMany
+    {
+        return $this->hasMany(related: BusinessFunnelStage::class, foreignKey: 'funnel_id');
+    }
+
+    public function stages(): HasMany
+    {
+        return $this->hasMany(related: FunnelStage::class, foreignKey: 'funnel_id');
     }
 
     /**
@@ -80,14 +79,4 @@ class Funnel extends Model
     {
         return $query->whereIn('status', $statuses);
     }
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
 }

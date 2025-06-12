@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class DefaultFunnelsSeeder extends Seeder
+class ShopFunnelsSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -22,47 +22,45 @@ class DefaultFunnelsSeeder extends Seeder
         // Funnel::factory(5)
         //     ->create();
 
-        // 1) Funil de Vendas Padrão
+        // 1) Funil de Loja Física (PDV)
         $pipeline = Funnel::create([
-            'name'        => 'Funil de Vendas Padrão',
-            'description' => 'Funil padrão de vendas B2B com ciclo médio de 4–8 semanas.',
+            'name'        => 'Funil de Loja Física (PDV)',
+            'description' => 'Etapas de atendimento e conversão no ponto de venda físico.',
             'order'       => 1,
             'status'      => 1,
         ]);
 
         $pipelineStages = [
             [
-                'name'  => 'Prospecção',
+                'name'  => 'Cliente Interessado',
                 'prob'  => 10,
                 'order' => 1,
                 'subs'  => [
-                    'Aguardando Atendimento',
-                    'Tentando Contato',
-                    'Contato Realizado',
-                    'Descarte Temporário'
+                    'Abordagem na Loja',
+                    'Lead via WhatsApp ou Instagram',
                 ],
             ],
             [
-                'name'  => 'Qualificação',
+                'name'  => 'Necessidade Identificada',
                 'prob'  => 30,
                 'order' => 2,
                 'subs'  => [
-                    'Necessidades Levantadas',
-                    'Orçamento Confirmado',
+                    'Conversa com Vendedor',
+                    'Demonstração do Produto',
                 ],
             ],
             [
-                'name'  => 'Proposta',
+                'name'  => 'Proposta ou Condição Apresentada',
                 'prob'  => 50,
                 'order' => 3,
                 'subs'  => [
-                    'Proposta Elaborada',
-                    'Proposta Enviada',
+                    'Oferta Especial ou Desconto',
+                    'Parcelamento Apresentado',
                 ],
             ],
             [
-                'name'  => 'Negociação',
-                'prob'  => 80,
+                'name'  => 'Cliente Decidindo',
+                'prob'  => 70,
                 'order' => 4,
                 'subs'  => [
                     'Tratativa de Objeções',
@@ -70,13 +68,13 @@ class DefaultFunnelsSeeder extends Seeder
                 ],
             ],
             [
-                'name'  => 'Negócio Fechado – Ganhou',
+                'name'  => 'Compra Realizada – Ganhou',
                 'prob'  => 100,
                 'order' => 5,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Negócio Perdido',
+                'name'  => 'Não Comprou - Perdido',
                 'prob'  => 0,
                 'order' => 6,
                 'subs'  => [],
@@ -85,106 +83,60 @@ class DefaultFunnelsSeeder extends Seeder
 
         $this->seedStagesAndSubstages(funnelId: $pipeline->id, stages: $pipelineStages);
 
-        // 2) Funil de Ganhos Rápidos
-        $quick = Funnel::create([
-            'name'        => 'Funil de Ganhos Rápidos',
-            'description' => 'Funil curto, ideal para vendas simples ou upgrades rápidos.',
+        // 2) Funil de Loja Virtual (E-commerce)
+        $ecommerce = Funnel::create([
+            'name'        => 'Funil de Loja Virtual (E-commerce)',
+            'description' => 'Acompanhamento de leads, carrinhos e pedidos online.',
             'order'       => 2,
             'status'      => 1,
         ]);
 
-        $quickStages = [
+        $ecommerceStages = [
             [
-                'name'  => 'Novo',
+                'name'  => 'Visitou o Site / Landing Page',
                 'prob'  => 10,
                 'order' => 1,
-                'subs'  => [],
+                'subs'  => [
+                    'Acesso Direto ou Redes Sociais',
+                    'Clique em Anúncio'
+                ],
             ],
             [
-                'name'  => 'Contatado',
+                'name'  => 'Adicionou ao Carrinho',
                 'prob'  => 30,
                 'order' => 2,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Demonstração / Proposta',
+                'name'  => 'Iniciou Checkout',
                 'prob'  => 60,
                 'order' => 3,
                 'subs'  => [
-                    'Demonstração Agendada',
-                    'Proposta Enviada',
+                    'Cadastro Iniciado',
+                    'Preenchimento de Endereço',
                 ],
             ],
             [
-                'name'  => 'Decisão',
+                'name'  => 'Pedido Realizado',
                 'prob'  => 90,
                 'order' => 4,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Negócio Fechado – Ganhou',
+                'name'  => 'Pedido Pago – Ganhou',
                 'prob'  => 100,
                 'order' => 5,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Negócio Perdido',
+                'name'  => 'Carrinho Abandonado - Perdido',
                 'prob'  => 0,
                 'order' => 6,
                 'subs'  => [],
             ],
         ];
 
-        $this->seedStagesAndSubstages(funnelId: $quick->id, stages: $quickStages);
-
-        // 3) Funil de Renovação e Upsell
-        $renew = Funnel::create([
-            'name'        => 'Funil de Renovação e Upsell',
-            'description' => 'Para renovações de contratos ou ofertas de cross-sell.',
-            'order'       => 3,
-            'status'      => 1,
-        ]);
-
-        $renewStages = [
-            [
-                'name'  => 'Lembrete de Renovação Enviado',
-                'prob'  => 20,
-                'order' => 1,
-                'subs'  => [
-                    'Notificação por E-mail ou WhatsApp',
-                    'Chamada de Follow-up',
-                ],
-            ],
-            [
-                'name'  => 'Negociação (Renovação/Upsell)',
-                'prob'  => 50,
-                'order' => 2,
-                'subs'  => [
-                    'Apresentação de Opções',
-                    'Ajuste de Termos',
-                ],
-            ],
-            [
-                'name'  => 'Aprovado pelo Cliente',
-                'prob'  => 80,
-                'order' => 3,
-                'subs'  => [],
-            ],
-            [
-                'name'  => 'Renovado / Upsell',
-                'prob'  => 100,
-                'order' => 4,
-                'subs'  => [],
-            ],
-            [
-                'name'  => 'Churn',
-                'prob'  => 0,
-                'order' => 5,
-                'subs'  => [],
-            ],
-        ];
-
-        $this->seedStagesAndSubstages(funnelId: $renew->id, stages: $renewStages);
+        $this->seedStagesAndSubstages(funnelId: $ecommerce->id, stages: $ecommerceStages);
     }
 
     protected function seedStagesAndSubstages(int $funnelId, array $stages): void

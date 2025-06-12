@@ -156,7 +156,7 @@ class BusinessResource extends Resource
                     ->visible(
                         fn(callable $get): bool =>
                         !empty($get('funnel_stage_id'))
-                            && FunnelSubstage::where('funnel_stage_id', $get('funnel_stage_id'))->exists(),
+                        && FunnelSubstage::where('funnel_stage_id', $get('funnel_stage_id'))->exists(),
                     ),
                 Forms\Components\Select::make('business_funnel_stage.loss_reason')
                     ->label(__('Motivo da perda'))
@@ -168,7 +168,7 @@ class BusinessResource extends Resource
                     ->visible(
                         fn(callable $get): bool =>
                         !empty($get('funnel_stage_id'))
-                            && FunnelStage::find($get('funnel_stage_id'))->business_probability === 0,
+                        && FunnelStage::find($get('funnel_stage_id'))->business_probability === 0,
                     ),
                 Forms\Components\DatePicker::make('business_funnel_stage.business_at')
                     ->label(__('Dt. fechamento'))
@@ -181,7 +181,7 @@ class BusinessResource extends Resource
                     ->visible(
                         fn(callable $get): bool =>
                         !empty($get('funnel_stage_id'))
-                            && in_array(FunnelStage::find($get('funnel_stage_id'))->business_probability, [0, 100]),
+                        && in_array(FunnelStage::find($get('funnel_stage_id'))->business_probability, [0, 100]),
                     ),
                 Forms\Components\TextInput::make('price')
                     ->label(__('Valor'))
@@ -196,7 +196,7 @@ class BusinessResource extends Resource
                     ->required(
                         fn(callable $get): bool =>
                         !empty($get('funnel_stage_id'))
-                            && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
+                        && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
                     )
                     ->maxValue(42949672.95),
                 Forms\Components\Textarea::make('description')
@@ -453,13 +453,11 @@ class BusinessResource extends Resource
                                 ->relationship(
                                     name: 'funnel',
                                     titleAttribute: 'name',
-                                    // modifyQueryUsing: fn(FunnelService $service, Builder $query): Builder =>
-                                    // $service->getQueryByFunnels(query: $query),
+                                    modifyQueryUsing: fn(Builder $query): Builder =>
+                                    $query->orderBy('order', 'asc')
+                                        ->orderBy('created_at', 'asc')
                                 )
-                                // ->default(
-                                //     fn(FunnelService $service): ?int =>
-                                //     $service->getBusinessDefaultFunnel()
-                                // )
+                                ->default(request()->input('funnel_id') ?? null)
                                 // ->multiple()
                                 // ->selectablePlaceholder(false)
                                 ->native(false)
@@ -1027,6 +1025,9 @@ class BusinessResource extends Resource
             return $query;
         }
 
-        return $query->whereHasCurrentUser(userIds: $user->id);
+        $service = app(BusinessService::class);
+        $usersIds = $service->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
+
+        return $query->whereHasCurrentUser(userIds: $usersIds);
     }
 }

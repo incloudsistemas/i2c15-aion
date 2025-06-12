@@ -116,7 +116,7 @@ class PermissionResource extends Resource
     {
         return [
             Tables\Columns\TextColumn::make('name')
-                ->label(__('Nome'))
+                ->label(__('Permissão'))
                 ->searchable()
                 ->sortable(),
             Tables\Columns\TextColumn::make('roles.name')
@@ -231,7 +231,7 @@ class PermissionResource extends Resource
                 Infolists\Components\TextEntry::make('id')
                     ->label(__('#ID')),
                 Infolists\Components\TextEntry::make('name')
-                    ->label(__('Nome')),
+                    ->label(__('Permissão')),
                 Infolists\Components\TextEntry::make('roles.name')
                     ->label(__('Nível(is) de acesso(s)'))
                     ->badge()

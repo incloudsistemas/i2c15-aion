@@ -74,9 +74,6 @@ return [
         ],
         // LÍDER: responsável por uma ou mais agências, podendo visualizar e gerenciar todos os dados das equipes e usuários subordinados às suas agências.
         'Líder' => [
-            'Usuários' => 'c,r,u,d',
-            'Equipes'  => 'c,r,u,d',
-
             '[CRM] Contatos' => 'c,r,u,d',
             '[CRM] Negócios' => 'c,r,u,d',
             // '[CRM] Filas' => 'c,r,u,d',

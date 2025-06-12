@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class DefaultFunnelsSeeder extends Seeder
+class RealEstateFunnelsSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -22,17 +22,17 @@ class DefaultFunnelsSeeder extends Seeder
         // Funnel::factory(5)
         //     ->create();
 
-        // 1) Funil de Vendas Padrão
+        // 1) Funil Imobiliário – Vendas de Imóveis
         $pipeline = Funnel::create([
-            'name'        => 'Funil de Vendas Padrão',
-            'description' => 'Funil padrão de vendas B2B com ciclo médio de 4–8 semanas.',
+            'name'        => 'Funil de Vendas de Imóveis',
+            'description' => 'Etapas adaptadas ao processo de vendas de imóveis novos ou lançamentos.',
             'order'       => 1,
             'status'      => 1,
         ]);
 
         $pipelineStages = [
             [
-                'name'  => 'Prospecção',
+                'name'  => 'Lead Captado',
                 'prob'  => 10,
                 'order' => 1,
                 'subs'  => [
@@ -44,140 +44,160 @@ class DefaultFunnelsSeeder extends Seeder
             ],
             [
                 'name'  => 'Qualificação',
-                'prob'  => 30,
+                'prob'  => 20,
                 'order' => 2,
                 'subs'  => [
-                    'Necessidades Levantadas',
-                    'Orçamento Confirmado',
+                    'Validação de Interesse',
+                    'Perfil e Capacidade de Pagamento',
                 ],
             ],
             [
-                'name'  => 'Proposta',
-                'prob'  => 50,
+                'name'  => 'Atendimento e Visita',
+                'prob'  => 40,
                 'order' => 3,
                 'subs'  => [
-                    'Proposta Elaborada',
-                    'Proposta Enviada',
+                    'Agendamento de Visita(s)',
+                    'Visita Realizada(s)',
                 ],
             ],
             [
                 'name'  => 'Negociação',
-                'prob'  => 80,
+                'prob'  => 60,
                 'order' => 4,
                 'subs'  => [
-                    'Tratativa de Objeções',
-                    'Revisão de Contrato',
+                    'Envio de Proposta',
+                    'Contra-oferta ou Condições Especiais',
                 ],
             ],
             [
-                'name'  => 'Negócio Fechado – Ganhou',
-                'prob'  => 100,
+                'name'  => 'Documentação',
+                'prob'  => 80,
                 'order' => 5,
+                'subs'  => [
+                    'Envio de Documentos do Cliente',
+                    'Aprovação de Crédito ou Análise Jurídica',
+                ],
+            ],
+            [
+                'name'  => 'Contrato Assinado - Ganhou',
+                'prob'  => 100,
+                'order' => 6,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Negócio Perdido',
+                'name'  => 'Venda Perdida',
                 'prob'  => 0,
-                'order' => 6,
+                'order' => 7,
                 'subs'  => [],
             ],
         ];
 
         $this->seedStagesAndSubstages(funnelId: $pipeline->id, stages: $pipelineStages);
 
-        // 2) Funil de Ganhos Rápidos
-        $quick = Funnel::create([
-            'name'        => 'Funil de Ganhos Rápidos',
-            'description' => 'Funil curto, ideal para vendas simples ou upgrades rápidos.',
+        // 2) Funil Imobiliário – Aluguel de Imóveis
+        $rent = Funnel::create([
+            'name'        => 'Funil de Aluguel de Imóveis',
+            'description' => 'Etapas para acompanhar renovações contratuais e manter a ocupação do imóvel.',
             'order'       => 2,
             'status'      => 1,
         ]);
 
-        $quickStages = [
+        $rentStages = [
             [
-                'name'  => 'Novo',
+                'name'  => 'Interessado em Locação',
                 'prob'  => 10,
                 'order' => 1,
-                'subs'  => [],
-            ],
-            [
-                'name'  => 'Contatado',
-                'prob'  => 30,
-                'order' => 2,
-                'subs'  => [],
-            ],
-            [
-                'name'  => 'Demonstração / Proposta',
-                'prob'  => 60,
-                'order' => 3,
                 'subs'  => [
-                    'Demonstração Agendada',
-                    'Proposta Enviada',
+                    'Aguardando Atendimento',
+                    'Tentando Contato',
+                    'Contato Realizado',
+                    'Descarte Temporário'
                 ],
             ],
             [
-                'name'  => 'Decisão',
-                'prob'  => 90,
-                'order' => 4,
-                'subs'  => [],
+                'name'  => 'Visita ao Imóvel',
+                'prob'  => 30,
+                'order' => 2,
+                'subs'  => [
+                    'Agendamento de Visita(s)',
+                    'Visita(s) Realizada(s)',
+                ],
             ],
             [
-                'name'  => 'Negócio Fechado – Ganhou',
+                'name'  => 'Proposta de Locação',
+                'prob'  => 50,
+                'order' => 3,
+                'subs'  => [
+                    'Negociação de Condições',
+                    'Escolha de Garantia (fiador, caução, seguro)',
+                ],
+            ],
+            [
+                'name'  => 'Análise Cadastral',
+                'prob'  => 70,
+                'order' => 4,
+                'subs'  => [
+                    'Envio de Documentação',
+                    'Aprovação pela Administradora',
+                ],
+            ],
+            [
+                'name'  => 'Contrato Assinado - Ganhou',
                 'prob'  => 100,
                 'order' => 5,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Negócio Perdido',
+                'name'  => 'Locação Perdida',
                 'prob'  => 0,
                 'order' => 6,
                 'subs'  => [],
             ],
         ];
 
-        $this->seedStagesAndSubstages(funnelId: $quick->id, stages: $quickStages);
+        $this->seedStagesAndSubstages(funnelId: $rent->id, stages: $rentStages);
 
-        // 3) Funil de Renovação e Upsell
+        // 3) Funil Imobiliário – Renovação de Aluguel
         $renew = Funnel::create([
-            'name'        => 'Funil de Renovação e Upsell',
-            'description' => 'Para renovações de contratos ou ofertas de cross-sell.',
+            'name'        => 'Funil de Renovação de Aluguel',
+            'description' => 'Etapas para acompanhar renovações contratuais e manter a ocupação do imóvel.',
             'order'       => 3,
             'status'      => 1,
         ]);
 
         $renewStages = [
             [
-                'name'  => 'Lembrete de Renovação Enviado',
+                'name'  => 'Aviso de Vencimento Enviado',
                 'prob'  => 20,
                 'order' => 1,
                 'subs'  => [
                     'Notificação por E-mail ou WhatsApp',
-                    'Chamada de Follow-up',
+                    'Contato Telefônico',
                 ],
             ],
             [
-                'name'  => 'Negociação (Renovação/Upsell)',
+                'name'  => 'Negociação de Renovação',
                 'prob'  => 50,
                 'order' => 2,
                 'subs'  => [
-                    'Apresentação de Opções',
-                    'Ajuste de Termos',
+                    'Proposta de Novo Valor',
+                    'Ajustes de Condições Contratuais',
                 ],
             ],
             [
-                'name'  => 'Aprovado pelo Cliente',
+                'name'  => 'Aprovação do Inquilino',
                 'prob'  => 80,
                 'order' => 3,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Renovado / Upsell',
+                'name'  => 'Contrato Renovado - Ganhou',
                 'prob'  => 100,
                 'order' => 4,
                 'subs'  => [],
             ],
             [
-                'name'  => 'Churn',
+                'name'  => 'Não Renovou / Desocupação - Perdido',
                 'prob'  => 0,
                 'order' => 5,
                 'subs'  => [],
@@ -203,7 +223,7 @@ class DefaultFunnelsSeeder extends Seeder
                     'funnel_stage_id' => $stage->id,
                     'name'            => $subData,
                     'description'     => null,
-                    'order'           => $key+1,
+                    'order'           => $key + 1,
                 ]);
             }
         }

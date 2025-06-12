@@ -10,6 +10,8 @@ use App\Filament\Resources\Polymorphics\RelationManagers\AddressesRelationManage
 use App\Filament\Resources\Polymorphics\RelationManagers\MediaRelationManager;
 use App\Models\Crm\Contacts\Individual;
 use App\Models\Polymorphics\Address;
+use App\Models\System\Team;
+use App\Models\System\User;
 use App\Services\Crm\Contacts\ContactService;
 use App\Services\Crm\Contacts\IndividualService;
 use App\Services\Crm\Contacts\LegalEntityService;
@@ -842,21 +844,10 @@ class IndividualResource extends Resource
             return $query->whereHas('contact');
         }
 
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     $teamUserIds = $user->teams()
-        //         ->with('users:id')
-        //         ->get()
-        //         ->pluck('users.*.id')
-        //         ->flatten()
-        //         ->unique()
-        //         ->toArray();
+        $service = app(ContactService::class);
+        $usersIds = $service->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
 
-        //     return $query->whereHas('contact', function (Builder $query) use ($teamUserIds): Builder {
-        //         return $query->whereIn('user_id', $teamUserIds);
-        //     });
-        // }
-
-        return $query->whereHas('contact', fn(Builder $query): Builder => $query->where('user_id', $user->id));
+        return $query->whereHas('contact', fn(Builder $query): Builder => $query->whereIn('user_id', $usersIds));
     }
 
     public static function getGloballySearchableAttributes(): array

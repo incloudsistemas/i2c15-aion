@@ -143,7 +143,7 @@ class RoleResource extends Resource
     {
         return [
             Tables\Columns\TextColumn::make('name')
-                ->label(__('Nome'))
+                ->label(__('Nível de acesso'))
                 ->searchable()
                 ->sortable(),
             Tables\Columns\TextColumn::make('created_at')
@@ -239,19 +239,36 @@ class RoleResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\TextEntry::make('id')
-                    ->label(__('#ID')),
-                Infolists\Components\TextEntry::make('name')
-                    ->label(__('Nome')),
-                Infolists\Components\Grid::make(['default' => 3])
-                    ->schema([
-                        Infolists\Components\TextEntry::make('created_at')
-                            ->label(__('Cadastro'))
-                            ->dateTime('d/m/Y H:i'),
-                        Infolists\Components\TextEntry::make('updated_at')
-                            ->label(__('Últ. atualização'))
-                            ->dateTime('d/m/Y H:i'),
-                    ]),
+                Infolists\Components\Tabs::make('Label')
+                    ->tabs([
+                        Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
+                            ->schema([
+                                Infolists\Components\TextEntry::make('name')
+                                    ->label(__('Nível de acesso')),
+                                Infolists\Components\Grid::make(['default' => 3])
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                        Infolists\Components\TextEntry::make('updated_at')
+                                            ->label(__('Últ. atualização'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ]),
+                            ]),
+                        Infolists\Components\Tabs\Tab::make(__('Lista de Permissões'))
+                            ->schema([
+                                Infolists\Components\TextEntry::make('permissions.name')
+                                    ->hiddenLabel()
+                                    ->badge()
+                                    ->columnSpanFull(),
+                            ])
+                            ->visible(
+                                fn(Role $record): bool =>
+                                $record->permissions()->exists()
+                            ),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
             ])
             ->columns(3);
     }

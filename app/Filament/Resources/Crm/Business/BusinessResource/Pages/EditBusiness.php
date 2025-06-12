@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Crm\Business\BusinessResource\Pages;
 
 use App\Filament\Resources\Crm\Business\BusinessResource;
 use App\Models\Crm\Business\Business;
+use App\Models\Crm\Business\FunnelStage as BusinessFunnelStage;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Contacts\Role;
 use App\Models\Crm\Funnels\Funnel;
@@ -16,6 +17,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditBusiness extends EditRecord
 {
     protected static string $resource = BusinessResource::class;
+
+    protected ?int $currentUserId = null;
+
+    protected ?int $currentContactId = null;
+
+    protected BusinessFunnelStage $currentBusinessFunnelStage;
 
     protected Funnel $funnel;
 
@@ -59,7 +66,14 @@ class EditBusiness extends EditRecord
 
     protected function beforeSave(): void
     {
+        $this->currentUserId = $this->record->currentUser->id;
+
+        $this->currentContactId = $this->record->contact_id;
+
+        $this->currentBusinessFunnelStage = $this->record->currentBusinessFunnelStage;
+
         $this->funnel = Funnel::findOrFail($this->data['funnel_id']);
+
         $this->funnelStage = FunnelStage::findOrFail($this->data['funnel_stage_id']);
 
         if ($this->data['funnel_substage_id']) {
@@ -105,6 +119,11 @@ class EditBusiness extends EditRecord
 
         $descriptions = [];
 
+        if ($this->isBusinessContactDifferent()) {
+            $newContactName = $this->record->contact->name;
+            $descriptions[] = "Novo contato {$newContactName} atribuído ao negócio por: {$userName}";
+        }
+
         if ($this->isFunnelOrStagesDifferent()) {
             $newStepDesc = "Etapa do negócio atualizada por: {$userName} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
 
@@ -117,7 +136,7 @@ class EditBusiness extends EditRecord
 
         if ($this->isBusinessOwnerDifferent()) {
             $newOwnerName = $this->record->currentUser->name;
-            $descriptions[] = "Novo negócio atribuído à {$newOwnerName} por: {$userName}";
+            $descriptions[] = "Novo usuário {$newOwnerName} atribuído ao negócio por: {$userName}";
         }
 
         foreach ($descriptions as $description) {
@@ -146,17 +165,18 @@ class EditBusiness extends EditRecord
 
     protected function isBusinessOwnerDifferent(): bool
     {
-        $currentUser = $this->record->currentUser;
+        return $this->currentUserId !== $this->data['current_user_id'];
+    }
 
-        return $currentUser->id !== $this->data['current_user_id'];
+    protected function isBusinessContactDifferent(): bool
+    {
+        return $this->currentContactId !== $this->data['contact_id'];
     }
 
     protected function isFunnelOrStagesDifferent(): bool
     {
-        $currentBusinessFunnelStage = $this->record->currentBusinessFunnelStage;
-
-        return $currentBusinessFunnelStage->funnel_id !== $this->data['funnel_id']
-            || $currentBusinessFunnelStage->funnel_stage_id !== $this->data['funnel_stage_id']
-            || $currentBusinessFunnelStage->funnel_substage_id !== $this->data['funnel_substage_id'];
+        return $this->currentBusinessFunnelStage->funnel_id !== $this->data['funnel_id']
+            || $this->currentBusinessFunnelStage->funnel_stage_id !== $this->data['funnel_stage_id']
+            || $this->currentBusinessFunnelStage->funnel_substage_id !== $this->data['funnel_substage_id'];
     }
 }

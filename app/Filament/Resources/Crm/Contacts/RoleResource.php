@@ -124,7 +124,7 @@ class RoleResource extends Resource
     {
         return [
             Tables\Columns\TextColumn::make('name')
-                ->label(__('Nome'))
+                ->label(__('Tipo de contato'))
                 ->searchable()
                 ->sortable(),
             Tables\Columns\TextColumn::make('status')
@@ -239,7 +239,7 @@ class RoleResource extends Resource
                 Infolists\Components\TextEntry::make('id')
                     ->label(__('#ID')),
                 Infolists\Components\TextEntry::make('name')
-                    ->label(__('Nome')),
+                    ->label(__('Tipo de contato')),
                 Infolists\Components\Grid::make(['default' => 3])
                     ->schema([
                         Infolists\Components\TextEntry::make('status')

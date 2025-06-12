@@ -87,7 +87,7 @@ class User extends Authenticatable implements FilamentUser, HasMedia
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if ((int) $this->status->value === 0) {
+        if ((int) $this->status->value !== 1) {
             // auth()->logout();
             return false;
         }
@@ -129,6 +129,31 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     public function contacts(): HasMany
     {
         return $this->hasMany(related: Contact::class);
+    }
+
+    public function collaboratorTeams(): BelongsToMany
+    {
+        return $this->belongsToMany(related: Team::class)
+            ->withPivot(columns: 'role')
+             ->wherePivot(column: 'role', operator: 2); // 2 - 'Colaborador/Collaborator'
+    }
+
+    public function coordinatorTeams(): BelongsToMany
+    {
+        return $this->belongsToMany(related: Team::class)
+            ->withPivot(columns: 'role')
+             ->wherePivot(column: 'role', operator: 1); // 1 - 'Líder/Leader ou Coordenador/Coordinator'
+    }
+
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(related: Team::class)
+            ->withPivot(columns: 'role');
+    }
+
+    public function agencies(): BelongsToMany
+    {
+        return $this->belongsToMany(related: Agency::class);
     }
 
     public function address(): MorphOne

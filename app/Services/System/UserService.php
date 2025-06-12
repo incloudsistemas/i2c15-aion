@@ -31,7 +31,9 @@ class UserService extends BaseService
 
     public function getUserOptionsBySearch(?string $search, ?array $roles = null): array
     {
-        return $this->user->byStatuses(statuses: [1]) // 1 - Ativo
+        $user = auth()->user();
+
+        $query = $this->user->byStatuses(statuses: [1]) // 1 - Ativo
             ->where(function (Builder $query) use ($search): Builder {
                 return $query->where('cpf', 'like', "%{$search}%")
                     ->orWhereRaw("REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), '/', '') LIKE ?", ["%{$search}%"])
@@ -42,8 +44,14 @@ class UserService extends BaseService
                 return $query->whereHas('roles', function (Builder $query) use ($roles): Builder {
                     return $query->whereIn('id', $roles);
                 });
-            })
-            ->limit(50)
+            });
+
+        if (!$user->hasAnyRole(['Superadministrador', 'Administrador'])) {
+            $usersIds = $this->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
+            $query->whereIn('id', $usersIds);
+        }
+
+        return $query->limit(50)
             ->get()
             ->mapWithKeys(function (User $user): array {
                 $label = $user->name . ($user->cpf ? " - {$user->cpf}" : '');
