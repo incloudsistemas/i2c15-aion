@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activities', function (Blueprint $table) {
+        Schema::create('system_interactions', function (Blueprint $table) {
             $table->id();
-            // activityable_id e activityable_type
-            $table->morphs('activityable');
+            // interactable_id e interactable_type
+            $table->morphs('interactable');
             // Criador/Captador "id_owner"
             $table->foreignId('user_id')->nullable();
             $table->foreign('user_id')
@@ -24,9 +24,12 @@ return new class extends Migration
                 ->onDelete('set null');
             // Descrição da atividade
             $table->text('description')->nullable();
+            // Data
+            $table->json('data')->nullable();
             // Atributos personalizados
             $table->json('custom')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -36,6 +39,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('activities');
+        Schema::dropIfExists('system_interactions');
     }
 };

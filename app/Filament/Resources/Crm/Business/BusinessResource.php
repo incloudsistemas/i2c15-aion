@@ -7,7 +7,12 @@ use App\Enums\Crm\Business\PriorityEnum;
 use App\Enums\ProfileInfos\GenderEnum;
 use App\Filament\Resources\Crm\Business\BusinessResource\Pages;
 use App\Filament\Resources\Crm\Business\BusinessResource\RelationManagers;
+use App\Filament\Resources\Polymorphics\RelationManagers\Activities\EmailsRelationManager;
+use App\Filament\Resources\Polymorphics\RelationManagers\Activities\MeetingsRelationManager;
+use App\Filament\Resources\Polymorphics\RelationManagers\Activities\NotesRelationManager;
+use App\Filament\Resources\Polymorphics\RelationManagers\Activities\TasksRelationManager;
 use App\Filament\Resources\Polymorphics\RelationManagers\MediaRelationManager;
+use App\Filament\Resources\Polymorphics\RelationManagers\SystemInteractionsRelationManager;
 use App\Models\Crm\Business\Business;
 use App\Models\Crm\Funnels\FunnelStage;
 use App\Models\Crm\Funnels\FunnelSubstage;
@@ -196,7 +201,7 @@ class BusinessResource extends Resource
                     ->required(
                         fn(callable $get): bool =>
                         !empty($get('funnel_stage_id'))
-                        && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
+                            && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
                     )
                     ->maxValue(42949672.95),
                 Forms\Components\Textarea::make('description')
@@ -234,7 +239,6 @@ class BusinessResource extends Resource
                             $service->quickCreateActionBySources(field: 'source_id'),
                         ),
                     ),
-
                 Forms\Components\Select::make('current_user_id')
                     ->label(__('Responsável'))
                     ->getSearchResultsUsing(
@@ -783,7 +787,7 @@ class BusinessResource extends Resource
                                     ->visible(
                                         fn(Business $record): bool =>
                                         auth()->user()->hasAnyRole(['Superadministrador', 'Administrador'])
-                                            && $record->user_id !== $record->currentUser->id,
+                                        && $record->user_id !== $record->currentUser->id,
                                     ),
                                 Infolists\Components\TextEntry::make('description')
                                     ->label(__('Descrição'))
@@ -942,19 +946,22 @@ class BusinessResource extends Resource
                                     )
                                     ->columnSpanFull(),
                             ]),
-                        Infolists\Components\Tabs\Tab::make(__('Histórico de Atividades'))
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
                             ->schema([
-                                Infolists\Components\RepeatableEntry::make('activities')
-                                    ->label('Atividade(s)')
+                                Infolists\Components\RepeatableEntry::make('systemInteractions')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
                                     ->schema([
-                                        Infolists\Components\TextEntry::make('activity.description')
+                                        Infolists\Components\TextEntry::make('description')
                                             ->hiddenLabel()
                                             ->columnSpan(3),
-                                        Infolists\Components\TextEntry::make('activity.created_at')
+                                        Infolists\Components\TextEntry::make('owner.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
                                             ->label(__('Cadastro'))
                                             ->dateTime('d/m/Y H:i'),
                                     ])
-                                    ->columns(4)
+                                    ->columns(5)
                                     ->columnSpanFull(),
                             ]),
                         Infolists\Components\Tabs\Tab::make(__('Anexos'))
@@ -963,7 +970,12 @@ class BusinessResource extends Resource
                                     ->label('Arquivo(s)')
                                     ->schema([
                                         Infolists\Components\TextEntry::make('name')
-                                            ->label(__('Nome')),
+                                            ->label(__('Nome'))
+                                            ->helperText(
+                                                fn(Media $record): string =>
+                                                $record->file_name
+                                            )
+                                            ->columnSpan(2),
                                         Infolists\Components\TextEntry::make('mime_type')
                                             ->label(__('Mime')),
                                         Infolists\Components\TextEntry::make('size')
@@ -982,7 +994,7 @@ class BusinessResource extends Resource
                                                     ),
                                             ),
                                     ])
-                                    ->columns(3)
+                                    ->columns(4)
                                     ->columnSpanFull(),
                             ])
                             ->visible(
@@ -999,6 +1011,11 @@ class BusinessResource extends Resource
     public static function getRelations(): array
     {
         return [
+            SystemInteractionsRelationManager::class,
+            NotesRelationManager::class,
+            EmailsRelationManager::class,
+            TasksRelationManager::class,
+            MeetingsRelationManager::class,
             MediaRelationManager::class,
         ];
     }

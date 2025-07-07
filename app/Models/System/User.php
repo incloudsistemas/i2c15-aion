@@ -10,10 +10,10 @@ use App\Enums\ProfileInfos\GenderEnum;
 use App\Enums\ProfileInfos\MaritalStatusEnum;
 use App\Enums\ProfileInfos\UserStatusEnum;
 use App\Models\Crm\Business\Business;
-use App\Models\Crm\Business\Interaction;
 use App\Models\Crm\Contacts\Contact;
-use App\Models\Polymorphics\Activity;
+use App\Models\Polymorphics\Activities\Activity;
 use App\Models\Polymorphics\Address;
+use App\Models\Polymorphics\SystemInteraction;
 use App\Observers\System\UserObserver;
 use App\Services\System\RoleService;
 use Filament\Models\Contracts\FilamentUser;
@@ -100,14 +100,24 @@ class User extends Authenticatable implements FilamentUser, HasMedia
      *
      */
 
-    public function activity(): HasMany
+    public function ownSystemInteractions(): HasMany
     {
-        return $this->hasMany(related: Activity::class, foreignKey: 'user_id');
+        return $this->hasMany(related: SystemInteraction::class, foreignKey: 'user_id');
     }
 
-    public function businessInteractions(): HasMany
+    public function activities(): BelongsToMany
     {
-        return $this->hasMany(related: Interaction::class, foreignKey: 'user_id');
+        return $this->belongsToMany(
+            related: Activity::class,
+            table: 'activity_user',
+            foreignPivotKey: 'user_id',
+            relatedPivotKey: 'activity_id'
+        );
+    }
+
+    public function ownActivities(): HasMany
+    {
+        return $this->hasMany(related: Activity::class, foreignKey: 'user_id');
     }
 
     public function business(): BelongsToMany
@@ -135,14 +145,14 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     {
         return $this->belongsToMany(related: Team::class)
             ->withPivot(columns: 'role')
-             ->wherePivot(column: 'role', operator: 2); // 2 - 'Colaborador/Collaborator'
+            ->wherePivot(column: 'role', operator: 2); // 2 - 'Colaborador/Collaborator'
     }
 
     public function coordinatorTeams(): BelongsToMany
     {
         return $this->belongsToMany(related: Team::class)
             ->withPivot(columns: 'role')
-             ->wherePivot(column: 'role', operator: 1); // 1 - 'Líder/Leader ou Coordenador/Coordinator'
+            ->wherePivot(column: 'role', operator: 1); // 1 - 'Líder/Leader ou Coordenador/Coordinator'
     }
 
     public function teams(): BelongsToMany

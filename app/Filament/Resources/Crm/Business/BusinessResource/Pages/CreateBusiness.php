@@ -51,7 +51,7 @@ class CreateBusiness extends CreateRecord
     {
         $this->attachBusinessOwner();
         $this->createBusinessFunnelStage();
-        $this->createBusinessActivity();
+        $this->logBusinessSystemInteractions();
         $this->updateContactRolesToCustomer();
     }
 
@@ -73,15 +73,13 @@ class CreateBusiness extends CreateRecord
             ]);
     }
 
-    protected function createBusinessActivity(): void
+    protected function logBusinessSystemInteractions(): void
     {
         $user = auth()->user();
-        $userId = $user->id;
-        $userName = $user->name;
 
         $descriptions = [];
 
-        $baseDesc = "Novo negócio criado por: {$userName} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
+        $baseDesc = "Novo negócio criado por: {$user->name} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
 
         if ($this->funnelSubstage) {
             $baseDesc .= " / Sub-etapa: {$this->funnelSubstage->name}";
@@ -89,18 +87,15 @@ class CreateBusiness extends CreateRecord
 
         $descriptions[] = $baseDesc;
 
-        if ($userId !== $this->data['current_user_id']) {
+        if ($user->id !== $this->data['current_user_id']) {
             $newOwnerName = $this->record->currentUser->name;
-            $descriptions[] = "Novo negócio atribuído à {$newOwnerName} por: {$userName}";
+            $descriptions[] = "Novo negócio atribuído à {$newOwnerName} por: {$user->name}";
         }
 
         foreach ($descriptions as $description) {
-            $businessActivity = $this->record->activities()
-                ->create();
-
-            $businessActivity->activity()
+            $this->record->systemInteractions()
                 ->create([
-                    'user_id'     => $userId,
+                    'user_id'     => $user->id,
                     'description' => $description,
                 ]);
         }

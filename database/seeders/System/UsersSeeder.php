@@ -23,7 +23,7 @@ class UsersSeeder extends Seeder
 
         // user superadmin
         $superadmin = User::create([
-            'name'              => 'InCloud.sistemas',
+            'name'              => 'a i o n',
             'email'             => 'contato@incloudsistemas.com.br',
             'email_verified_at' => now(),
             'password'          => Hash::make('password'),

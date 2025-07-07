@@ -12,10 +12,14 @@ use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Funnels\Funnel;
 use App\Models\Crm\Funnels\FunnelStage;
 use App\Models\Crm\Funnels\FunnelSubstage;
+use App\Models\Polymorphics\Activities\Activity;
 use App\Models\System\User;
 use App\Observers\Crm\Business\BusinessObserver;
+use App\Traits\Polymorphics\Activityable;
+use App\Traits\Polymorphics\SystemInteractable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,14 +28,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
-use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Business extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, SoftDeletes;
+    use HasFactory, SystemInteractable, InteractsWithMedia, SoftDeletes;
 
     protected $table = 'crm_business';
 
@@ -65,13 +67,6 @@ class Business extends Model implements HasMedia
         static::observe(BusinessObserver::class);
     }
 
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->fit(Fit::Crop, 150, 150)
-            ->nonQueued();
-    }
-
     /**
      * RELATIONSHIPS.
      *
@@ -79,13 +74,7 @@ class Business extends Model implements HasMedia
 
     public function activities(): HasMany
     {
-        return $this->hasMany(related: BusinessActivity::class, foreignKey: 'business_id')
-            ->orderByDesc('id');
-    }
-
-    public function interactions(): HasMany
-    {
-        return $this->hasMany(related: Interaction::class, foreignKey: 'business_id');
+        return $this->hasMany(related: Activity::class, foreignKey: 'business_id');
     }
 
     public function source(): BelongsTo
@@ -237,6 +226,16 @@ class Business extends Model implements HasMedia
             $this->commission_price !== null
                 ? number_format($this->commission_price, 2, ',', '.')
                 : null,
+        );
+    }
+
+    protected function attachments(): Attribute
+    {
+        return Attribute::get(
+            fn(): ?Collection =>
+            $this->getMedia('attachments')
+                ->sortBy('order_column')
+                ->whenEmpty(fn() => null)
         );
     }
 }

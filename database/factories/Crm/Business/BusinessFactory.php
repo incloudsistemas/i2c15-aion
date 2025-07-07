@@ -116,10 +116,7 @@ class BusinessFactory extends Factory
                 }
 
                 foreach ($descriptions as $description) {
-                    $businessActivity = $business->activities()
-                        ->create();
-
-                    $businessActivity->activity()
+                    $business->systemInteractions()
                         ->create([
                             'user_id'     => $superadmId,
                             'description' => $description,

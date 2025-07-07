@@ -740,10 +740,15 @@ class UserResource extends Resource
                         Infolists\Components\Tabs\Tab::make(__('Anexos'))
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('attachments')
-                                    ->label(__('Arquivo(s)'))
+                                    ->label('Arquivo(s)')
                                     ->schema([
                                         Infolists\Components\TextEntry::make('name')
-                                            ->label(__('Nome')),
+                                            ->label(__('Nome'))
+                                            ->helperText(
+                                                fn(Media $record): string =>
+                                                $record->file_name
+                                            )
+                                            ->columnSpan(2),
                                         Infolists\Components\TextEntry::make('mime_type')
                                             ->label(__('Mime')),
                                         Infolists\Components\TextEntry::make('size')
@@ -762,7 +767,7 @@ class UserResource extends Resource
                                                     ),
                                             ),
                                     ])
-                                    ->columns(3)
+                                    ->columns(4)
                                     ->columnSpanFull(),
                             ])
                             ->visible(

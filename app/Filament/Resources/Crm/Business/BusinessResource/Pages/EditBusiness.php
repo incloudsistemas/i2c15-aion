@@ -85,7 +85,7 @@ class EditBusiness extends EditRecord
     {
         $this->syncBusinessOwner();
         $this->updateBusinessFunnelStage();
-        $this->updateBusinessActivity();
+        $this->logBusinessSystemInteractions();
         $this->updateContactRolesToCustomer();
     }
 
@@ -111,21 +111,19 @@ class EditBusiness extends EditRecord
         }
     }
 
-    protected function updateBusinessActivity(): void
+    protected function logBusinessSystemInteractions(): void
     {
         $user = auth()->user();
-        $userId = $user->id;
-        $userName = $user->name;
 
         $descriptions = [];
 
         if ($this->isBusinessContactDifferent()) {
             $newContactName = $this->record->contact->name;
-            $descriptions[] = "Novo contato {$newContactName} atribuído ao negócio por: {$userName}";
+            $descriptions[] = "Novo contato {$newContactName} atribuído ao negócio por: {$user->name}";
         }
 
         if ($this->isFunnelOrStagesDifferent()) {
-            $newStepDesc = "Etapa do negócio atualizada por: {$userName} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
+            $newStepDesc = "Etapa do negócio atualizada por: {$user->name} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
 
             if ($this->funnelSubstage) {
                 $newStepDesc .= " / Sub-etapa: {$this->funnelSubstage->name}";
@@ -136,16 +134,13 @@ class EditBusiness extends EditRecord
 
         if ($this->isBusinessOwnerDifferent()) {
             $newOwnerName = $this->record->currentUser->name;
-            $descriptions[] = "Novo usuário {$newOwnerName} atribuído ao negócio por: {$userName}";
+            $descriptions[] = "Novo usuário {$newOwnerName} atribuído ao negócio por: {$user->name}";
         }
 
         foreach ($descriptions as $description) {
-            $businessActivity = $this->record->activities()
-                ->create();
-
-            $businessActivity->activity()
+            $this->record->systemInteractions()
                 ->create([
-                    'user_id'     => $userId,
+                    'user_id'     => $user->id,
                     'description' => $description,
                 ]);
         }

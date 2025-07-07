@@ -39,8 +39,6 @@ class AppServiceProvider extends ServiceProvider
             'crm_funnel_substages'       => 'App\Models\Crm\Funnels\FunnelSubstage',
             'crm_business'               => 'App\Models\Crm\Business\Business',
             'crm_business_funnel_stages' => 'App\Models\Crm\Business\FunnelStage',
-            'crm_business_interactions'  => 'App\Models\Crm\Business\Interaction',
-            'crm_business_activities'    => 'App\Models\Crm\Business\Activity',
 
             // 'financial_bank_accounts'     => 'App\Models\Financial\BankAccount',
             // 'financial_transactions'      => 'App\Models\Financial\Transaction',
@@ -57,8 +55,12 @@ class AppServiceProvider extends ServiceProvider
             // 'cms_post_categories'       => 'App\Models\Cms\PostCategory',
             // 'cms_post_sliders'          => 'App\Models\Cms\PostSlider',
 
-            'addresses'  => 'App\Models\Polymorphics\Address',
-            'activities' => 'App\Models\Polymorphics\Activity',
+            'addresses'           => 'App\Models\Polymorphics\Address',
+            'activities'          => 'App\Models\Polymorphics\Activities\Activity',
+            'activity_notes'      => 'App\Models\Polymorphics\Activities\Note',
+            'activity_emails'     => 'App\Models\Polymorphics\Activities\Email',
+            'activity_tasks'      => 'App\Models\Polymorphics\Activities\Task',
+            'system_interactions' => 'App\Models\Polymorphics\SystemInteraction',
         ]);
     }
 }

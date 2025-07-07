@@ -2,29 +2,35 @@
 
 namespace App\Models\Polymorphics;
 
+use App\Models\Polymorphics\Activities\Activity;
 use App\Models\System\User;
+use App\Observers\Polymorphics\SystemInteractionObserver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Activity extends Model
+class SystemInteraction extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'activityable_type',
-        'activityable_id',
+        'interactable_type',
+        'interactable_id',
         'user_id',
         'description',
+        'data',
         'custom'
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'data'   => 'array',
+        'custom' => 'array',
+    ];
+
+    protected static function booted(): void
     {
-        return [
-            'custom' => 'array',
-        ];
+        static::observe(SystemInteractionObserver::class);
     }
 
     /**
@@ -35,10 +41,5 @@ class Activity extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(related: User::class, foreignKey: 'user_id');
-    }
-
-    public function activityable(): MorphTo
-    {
-        return $this->morphTo();
     }
 }

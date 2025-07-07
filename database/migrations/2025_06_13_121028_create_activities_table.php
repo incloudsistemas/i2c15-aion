@@ -11,40 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('crm_business_interactions', function (Blueprint $table) {
+        Schema::create('activities', function (Blueprint $table) {
             $table->id();
-            // Negócio
-            $table->foreignId('business_id');
-            $table->foreign('business_id')
-                ->references('id')
-                ->on('crm_business')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
-            // Usuário
+            // activityable_id e activityable_type
+            $table->morphs('activityable');
+            // Criador/Captador "id_owner"
             $table->foreignId('user_id');
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            // Contato
-            $table->foreignId('contact_id');
-            $table->foreign('contact_id')
+            // Criador/Captador "id_owner"
+            $table->foreignId('business_id')->nullable();
+            $table->foreign('business_id')
                 ->references('id')
-                ->on('crm_contacts')
+                ->on('crm_business')
                 ->onUpdate('cascade')
-                ->onDelete('cascade');
-            // Tipo
-            // 1 - 'Note//Observação', 2 - 'Email', 3 - 'Call/Ligação', 4 - 'Task/Tarefa', 5 - 'Meeting/Reunião'...
-            $table->char('role', 1);
+                ->onDelete('set null');
             // Título/Assunto
             $table->string('subject')->nullable();
             // Conteúdo
             $table->longText('body')->nullable();
-            // Dt. agendamento
-            $table->timestamp('scheduled_at')->nullable();
-            // Dt. conclusão
-            $table->timestamp('finished_at')->nullable();
             // Atributos personalizados
             $table->json('custom')->nullable();
             $table->timestamps();
@@ -58,6 +46,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('crm_business_interactions');
+        Schema::dropIfExists('activities');
     }
 };

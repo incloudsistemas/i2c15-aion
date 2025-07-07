@@ -11,23 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('crm_business_activities', function (Blueprint $table) {
-            $table->id();
-            // Negócio
-            $table->foreignId('business_id');
-            $table->foreign('business_id')
+        Schema::create('activity_user', function (Blueprint $table) {
+            // Atividade
+            $table->foreignId('activity_id');
+            $table->foreign('activity_id')
                 ->references('id')
-                ->on('crm_business')
+                ->on('activities')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            // Contato
-            $table->foreignId('interaction_id')->nullable();
-            $table->foreign('interaction_id')
+            // Usuário
+            $table->foreignId('user_id');
+            $table->foreign('user_id')
                 ->references('id')
-                ->on('crm_business_interactions')
+                ->on('users')
                 ->onUpdate('cascade')
-                ->onDelete('set null');
-            $table->softDeletes();
+                ->onDelete('cascade');
+            // Não permite usuários repetidos por atividade.
+            $table->unique(['activity_id', 'user_id'], 'activity_user_unique');
         });
     }
 
@@ -37,6 +37,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('crm_business_activities');
+        Schema::dropIfExists('activity_user');
     }
 };

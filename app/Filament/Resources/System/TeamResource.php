@@ -71,7 +71,7 @@ class TeamResource extends Resource
                     ->required()
                     ->minLength(2)
                     ->maxLength(255)
-                    ->live(debounce: 1000)
+                    ->live(debounce: 500)
                     ->afterStateUpdated(
                         fn(callable $set, ?string $state): ?string =>
                         $set('slug', Str::slug($state))
@@ -533,10 +533,15 @@ class TeamResource extends Resource
                         Infolists\Components\Tabs\Tab::make(__('Anexos'))
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('attachments')
-                                    ->label(__('Arquivo(s)'))
+                                    ->label('Arquivo(s)')
                                     ->schema([
                                         Infolists\Components\TextEntry::make('name')
-                                            ->label(__('Nome')),
+                                            ->label(__('Nome'))
+                                            ->helperText(
+                                                fn(Media $record): string =>
+                                                $record->file_name
+                                            )
+                                            ->columnSpan(2),
                                         Infolists\Components\TextEntry::make('mime_type')
                                             ->label(__('Mime')),
                                         Infolists\Components\TextEntry::make('size')
@@ -555,7 +560,7 @@ class TeamResource extends Resource
                                                     ),
                                             ),
                                     ])
-                                    ->columns(3)
+                                    ->columns(4)
                                     ->columnSpanFull(),
                             ])
                             ->visible(

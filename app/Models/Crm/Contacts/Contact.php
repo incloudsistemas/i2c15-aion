@@ -4,8 +4,8 @@ namespace App\Models\Crm\Contacts;
 
 use App\Enums\DefaultStatusEnum;
 use App\Models\Crm\Business\Business;
-use App\Models\Crm\Business\Interaction;
 use App\Models\Crm\Source;
+use App\Models\Polymorphics\Activities\Activity;
 use App\Models\System\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -60,9 +61,14 @@ class Contact extends Model implements HasMedia
      *
      */
 
-    public function businessInteractions(): HasMany
+    public function activities(): BelongsToMany
     {
-        return $this->hasMany(related: Interaction::class, foreignKey: 'contact_id');
+        return $this->belongsToMany(
+            related: Activity::class,
+            table: 'activity_crm_contact',
+            foreignPivotKey: 'contact_id',
+            relatedPivotKey: 'activity_id'
+        );
     }
 
     public function business(): HasMany

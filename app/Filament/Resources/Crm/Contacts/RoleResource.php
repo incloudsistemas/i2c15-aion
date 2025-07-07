@@ -49,7 +49,7 @@ class RoleResource extends Resource
                     ->required()
                     ->minLength(2)
                     ->maxLength(255)
-                    ->live(debounce: 1000)
+                    ->live(debounce: 500)
                     ->afterStateUpdated(
                         fn(callable $set, ?string $state): ?string =>
                         $set('slug', Str::slug($state))

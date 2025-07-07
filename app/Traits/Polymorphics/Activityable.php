@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Traits\Activities;
+namespace App\Traits\Polymorphics;
 
-use App\Models\Polymorphics\Activity;
+use App\Models\Polymorphics\Activities\Activity;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 trait Activityable

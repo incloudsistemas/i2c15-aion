@@ -15,6 +15,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -102,7 +103,11 @@ class MediaRelationManager extends RelationManager
                                         response()->download($record->getPath(), $record->file_name),
                                     ),
                             ]),
-                        Tables\Actions\EditAction::make(),
+                        Tables\Actions\EditAction::make()
+                            ->before(
+                                fn(MediaService $service, Media $record, array $data) =>
+                                $service->beforeEditAction(ownerRecord: $this->ownerRecord, media: $record, data: $data)
+                            ),
                         Tables\Actions\Action::make('download')
                             ->icon('heroicon-s-arrow-down-tray')
                             ->action(
@@ -111,7 +116,11 @@ class MediaRelationManager extends RelationManager
                             ),
                     ])
                         ->dropdown(false),
-                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(
+                            fn(MediaService $service, Media $record) =>
+                            $service->beforeDeleteAction(ownerRecord: $this->ownerRecord, media: $record)
+                        ),
                 ])
                     ->label(__('Ações'))
                     ->icon('heroicon-m-chevron-down')
@@ -121,7 +130,11 @@ class MediaRelationManager extends RelationManager
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->before(
+                        fn(MediaService $service, Collection $records) =>
+                        $service->beforeDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
+                    ),
                 ]),
             ])
             ->emptyStateActions([

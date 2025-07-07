@@ -4,10 +4,10 @@ namespace App\Traits\Crm\Contacts;
 
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Polymorphics\Address;
+use App\Traits\Polymorphics\Addressable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -16,7 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 trait Contactable
 {
-    use HasFactory, InteractsWithMedia, SoftDeletes;
+    use HasFactory, Addressable, InteractsWithMedia, SoftDeletes;
 
     public function registerMediaConversions(?Media $media = null): void
     {
@@ -29,11 +29,6 @@ trait Contactable
      * RELATIONSHIPS.
      *
      */
-
-    public function addresses(): MorphMany
-    {
-        return $this->morphMany(related: Address::class, name: 'addressable');
-    }
 
     public function contact(): MorphOne
     {
