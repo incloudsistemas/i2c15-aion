@@ -20,7 +20,7 @@ abstract class BaseService
         // Check the class of the exception to handle it appropriately
         $message = match (get_class($e)) {
             ValidationException::class => $e->errors(),
-            default => $e->getMessage(),
+            default                    => $e->getMessage(),
         };
 
         return [
@@ -147,6 +147,15 @@ abstract class BaseService
             );
     }
 
+    public function tableFilterIndicateUsingByCreatedAt(array $data): ?string
+    {
+        return $this->indicateUsingByDates(
+            from: $data['created_from'],
+            until: $data['created_until'],
+            display: 'Cadastro'
+        );
+    }
+
     public function tableFilterByUpdatedAt(Builder $query, array $data): Builder
     {
         if (!$data['updated_from'] && !$data['updated_until']) {
@@ -169,5 +178,42 @@ abstract class BaseService
                 fn(Builder $query, $date): Builder =>
                 $query->whereDate('updated_at', '<=', $date),
             );
+    }
+
+    public function tableFilterIndicateUsingByUpdatedAt(array $data): ?string
+    {
+        return $this->indicateUsingByDates(
+            from: $data['updated_from'],
+            until: $data['updated_until'],
+            display: 'Atualização'
+        );
+    }
+
+    public function indicateUsingByDates(?string $from, ?string $until, string $display): ?string
+    {
+        if (blank($from) && blank($until)) {
+            return null;
+        }
+
+        $displayFrom  = !blank($from) ? ConvertEnToPtBrDate(date: $from) : null;
+        $displayUntil = !blank($until) ? ConvertEnToPtBrDate(date: $until) : null;
+
+        $parts = [];
+        if ($from && $until) {
+            if ($from === $until) {
+                $parts[] = __("{$display} em: :date", ['date' => $displayFrom]);
+            } else {
+                $parts[] = __("{$display} entre: :from e :until", [
+                    'from'  => $displayFrom,
+                    'until' => $displayUntil
+                ]);
+            }
+        } elseif ($from) {
+            $parts[] = __("{$display} de: :date", ['date' => $displayFrom]);
+        } elseif ($until) {
+            $parts[] = __("{$display} até: :date", ['date' => $displayUntil]);
+        }
+
+        return implode(' | ', $parts);
     }
 }

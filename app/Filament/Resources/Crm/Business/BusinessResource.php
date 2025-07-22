@@ -104,7 +104,7 @@ class BusinessResource extends Resource
                     )
                     ->default(
                         fn(FunnelService $service): ?int =>
-                        $service->getBusinessDefaultFunnel()
+                        $service->getBusinessDefaultFunnel(),
                     )
                     // ->multiple()
                     ->selectablePlaceholder(false)
@@ -201,7 +201,7 @@ class BusinessResource extends Resource
                     ->required(
                         fn(callable $get): bool =>
                         !empty($get('funnel_stage_id'))
-                            && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
+                        && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
                     )
                     ->maxValue(42949672.95),
                 Forms\Components\Textarea::make('description')
@@ -377,7 +377,6 @@ class BusinessResource extends Resource
                 ->description(
                     fn(BusinessService $service, Business $record): ?string =>
                     $service->getStageDescription(business: $record),
-                    // $record->substage?->name
                 )
                 ->badge()
                 ->color(
@@ -461,7 +460,10 @@ class BusinessResource extends Resource
                                     $query->orderBy('order', 'asc')
                                         ->orderBy('created_at', 'asc')
                                 )
-                                ->default(request()->input('funnel_id') ?? null)
+                                ->default(
+                                    fn(Pages\ListBusinesses $livewire): ?int =>
+                                    $livewire->activeFunnel?->id ?? null,
+                                )
                                 // ->multiple()
                                 // ->selectablePlaceholder(false)
                                 ->native(false)
@@ -473,6 +475,10 @@ class BusinessResource extends Resource
                                         $set('funnel_stage_id', null);
                                         $set('funnel_substages', null);
                                     }
+                                )
+                                ->disabled(
+                                    fn(Pages\ListBusinesses $livewire): bool =>
+                                    isset($livewire->activeFunnel),
                                 ),
                             Forms\Components\Select::make('funnel_stage_id')
                                 ->label(__('Etapa do negócio'))
@@ -510,6 +516,10 @@ class BusinessResource extends Resource
                 ->query(
                     fn(BusinessService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCurrentBusinessFunnelStages(query: $query, data: $data),
+                )
+                ->indicateUsing(
+                    fn(BusinessService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCurrentBusinessFunnelStages(data: $state),
                 )
                 ->columnSpanFull(),
             Tables\Filters\SelectFilter::make('contacts')
@@ -568,6 +578,10 @@ class BusinessResource extends Resource
                 ->query(
                     fn(BusinessService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByPrice(query: $query, data: $data),
+                )
+                ->indicateUsing(
+                    fn(BusinessService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByPrice(data: $state),
                 ),
             Tables\Filters\SelectFilter::make('priority')
                 ->label(__('Prioridade(s)'))
@@ -595,40 +609,6 @@ class BusinessResource extends Resource
                 )
                 ->multiple()
                 ->preload(),
-            Tables\Filters\Filter::make('closed_at')
-                ->label(__('Dt. fechamento'))
-                ->form([
-                    Forms\Components\Grid::make([
-                        'default' => 1,
-                        'md'      => 2,
-                    ])
-                        ->schema([
-                            Forms\Components\DatePicker::make('closed_from')
-                                ->label(__('Dt. fechamento de'))
-                                ->live(debounce: 500)
-                                ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
-                                        if (!empty($get('closed_until')) && $state > $get('closed_until')) {
-                                            $set('closed_until', $state);
-                                        }
-                                    }
-                                ),
-                            Forms\Components\DatePicker::make('closed_until')
-                                ->label(__('Dt. fechamento até'))
-                                ->live(debounce: 500)
-                                ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
-                                        if (!empty($get('closed_from')) && $state < $get('closed_from')) {
-                                            $set('closed_from', $state);
-                                        }
-                                    }
-                                ),
-                        ]),
-                ])
-                ->query(
-                    fn(BusinessService $service, Builder $query, array $data): Builder =>
-                    $service->tableFilterByClosedAt(query: $query, data: $data)
-                ),
             Tables\Filters\Filter::make('business_at')
                 ->label(__('Dt. competência'))
                 ->form([
@@ -662,6 +642,48 @@ class BusinessResource extends Resource
                 ->query(
                     fn(BusinessService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByBusinessAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(BusinessService $service, array $state): ?string =>
+                    $service->indicateUsingByDates(from: $state['business_from'], until: $state['business_until'], display: 'Competência'),
+                ),
+            Tables\Filters\Filter::make('closed_at')
+                ->label(__('Dt. fechamento'))
+                ->form([
+                    Forms\Components\Grid::make([
+                        'default' => 1,
+                        'md'      => 2,
+                    ])
+                        ->schema([
+                            Forms\Components\DatePicker::make('closed_from')
+                                ->label(__('Dt. fechamento de'))
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(
+                                    function (callable $get, callable $set, ?string $state): void {
+                                        if (!empty($get('closed_until')) && $state > $get('closed_until')) {
+                                            $set('closed_until', $state);
+                                        }
+                                    }
+                                ),
+                            Forms\Components\DatePicker::make('closed_until')
+                                ->label(__('Dt. fechamento até'))
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(
+                                    function (callable $get, callable $set, ?string $state): void {
+                                        if (!empty($get('closed_from')) && $state < $get('closed_from')) {
+                                            $set('closed_from', $state);
+                                        }
+                                    }
+                                ),
+                        ]),
+                ])
+                ->query(
+                    fn(BusinessService $service, Builder $query, array $data): Builder =>
+                    $service->tableFilterByClosedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(BusinessService $service, array $state): ?string =>
+                    $service->indicateUsingByDates(from: $state['closed_from'], until: $state['closed_until'], display: 'Fechamento'),
                 ),
             Tables\Filters\Filter::make('created_at')
                 ->label(__('Cadastro'))
@@ -696,6 +718,10 @@ class BusinessResource extends Resource
                 ->query(
                     fn(BusinessService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data),
+                )
+                ->indicateUsing(
+                    fn(BusinessService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -730,6 +756,10 @@ class BusinessResource extends Resource
                 ->query(
                     fn(BusinessService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data),
+                )
+                ->indicateUsing(
+                    fn(BusinessService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }
@@ -753,13 +783,12 @@ class BusinessResource extends Resource
                                     ->label(__('Etapa'))
                                     ->helperText(
                                         fn(BusinessService $service, Business $record): ?string =>
-                                        $service->getStageDescription(business: $record)
-                                        // $record->substage?->name
+                                        $service->getStageDescription(business: $record),
                                     )
                                     ->badge()
                                     ->color(
                                         fn(BusinessService $service, Business $record): string =>
-                                        $service->getStageColor(business: $record)
+                                        $service->getStageColor(business: $record),
                                     ),
                                 Infolists\Components\TextEntry::make('display_price')
                                     ->label(__('Valor (R$)'))

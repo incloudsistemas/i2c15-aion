@@ -40,9 +40,10 @@ class AppServiceProvider extends ServiceProvider
             'crm_business'               => 'App\Models\Crm\Business\Business',
             'crm_business_funnel_stages' => 'App\Models\Crm\Business\FunnelStage',
 
-            // 'financial_bank_accounts'     => 'App\Models\Financial\BankAccount',
-            // 'financial_transactions'      => 'App\Models\Financial\Transaction',
-            // 'financial_categories'        => 'App\Models\Financial\Category',
+            'financial_categories'        => 'App\Models\Financial\Category',
+            'financial_bank_institutions' => 'App\Models\Financial\BankInstitution',
+            'financial_bank_accounts'     => 'App\Models\Financial\BankAccount',
+            'financial_transactions'      => 'App\Models\Financial\Transaction',
 
             // 'cms_posts'                 => 'App\Models\Cms\Post',
             // 'cms_pages'                 => 'App\Models\Cms\Page',

@@ -706,7 +706,7 @@ class MeetingsRelationManager extends RelationManager
                                     ->helperText(
                                         fn(Activity $record): string =>
                                         $record->activityable->start_time->format('H:i') . ' - ' .
-                                        $record->activityable->end_time->format('H:i')
+                                            $record->activityable->end_time->format('H:i')
                                     )
                                     ->dateTime('d/m/Y'),
                                 // Infolists\Components\TextEntry::make('activityable.start_time')

@@ -5,6 +5,7 @@ namespace App\Models\Crm\Contacts;
 use App\Enums\DefaultStatusEnum;
 use App\Models\Crm\Business\Business;
 use App\Models\Crm\Source;
+use App\Models\Financial\Transaction;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Models\System\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -69,6 +70,11 @@ class Contact extends Model implements HasMedia
             foreignPivotKey: 'contact_id',
             relatedPivotKey: 'activity_id'
         );
+    }
+
+    public function financialTransactions(): HasMany
+    {
+        return $this->hasMany(related: Transaction::class, foreignKey: 'contact_id');
     }
 
     public function business(): HasMany

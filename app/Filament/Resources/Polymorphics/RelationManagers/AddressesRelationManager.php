@@ -374,7 +374,7 @@ class AddressesRelationManager extends RelationManager
             ->columns(3);
     }
 
-    private function setUniqueMainAddressCallback(): Closure
+    protected function setUniqueMainAddressCallback(): Closure
     {
         return function (AddressService $service, array $data, ?Address $record): void {
             $service->setUniqueMainAddress(data: $data, address: $record, ownerRecord: $this->ownerRecord);

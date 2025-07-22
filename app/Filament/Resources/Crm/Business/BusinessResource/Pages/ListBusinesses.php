@@ -9,7 +9,6 @@ use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListBusinesses extends ListRecords
@@ -18,77 +17,102 @@ class ListBusinesses extends ListRecords
 
     public ?Funnel $activeFunnel = null;
 
+    public function __construct()
+    {
+        $funnelId = request()->input('activeFunnel');
+        $this->setActiveFunnel(funnelId: $funnelId);
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('funnel')
-                ->label($this->activeFunnel->name ?? __('Todos os Funis'))
-                ->button()
-                ->color('gray')
-                ->icon('heroicon-o-funnel')
-                ->form([
-                    Forms\Components\Select::make('funnel_id')
-                        ->label(__('Funil'))
-                        ->hiddenLabel()
-                        ->placeholder(__('Todos os Funis'))
-                        ->options(
-                            fn(FunnelService $service): array =>
-                            $service->getOptionsByFunnels(),
-                        )
-                        ->default($this->activeFunnel->id ?? null)
-                        // ->multiple()
-                        // ->selectablePlaceholder(false)
-                        ->native(false)
-                        ->searchable()
-                        ->preload(),
-                ])
-                ->action(function (array $data) {
-                    $url = BusinessResource::getUrl('index', ['funnel_id' => $data['funnel_id']]);
-                    return redirect()->to($url);
-                })
-                ->modalHeading(__('Escolha o Funil')),
+            $this->getFunnelFilterAction(),
             Actions\CreateAction::make(),
         ];
     }
 
+    protected function getFunnelFilterAction(): Actions\Action
+    {
+        return Actions\Action::make('funnel')
+            ->label($this->activeFunnel?->name ?? __('Todos os Funis'))
+            ->button()
+            ->color('gray')
+            ->icon('heroicon-o-funnel')
+            ->form([
+                Forms\Components\Select::make('funnel_id')
+                    ->label(__('Funil'))
+                    ->hiddenLabel()
+                    ->placeholder(__('Todos os Funis'))
+                    ->options(
+                        fn(FunnelService $service): array =>
+                        $service->getOptionsByFunnels(),
+                    )
+                    ->default($this->activeFunnel?->id)
+                    // ->multiple()
+                    // ->selectablePlaceholder(false)
+                    ->native(false)
+                    ->searchable()
+                    ->preload(),
+            ])
+            ->action(
+                function (array $data) {
+                    $url = static::$resource::getUrl('index', ['activeFunnel' => $data['funnel_id']]);
+                    return redirect()->to($url);
+                }
+            )
+            ->modalHeading(__('Escolha o Funil'));
+    }
+
+    public function mount(): void
+    {
+        parent::mount();
+    }
+
     public function getTabs(): array
     {
-        $funnelId = request()->input('funnel_id');
-        $this->setActiveFunnel(funnelId: $funnelId);
-
         if ($this->activeFunnel) {
-            $tabs = [
-                'all' => Tab::make(__('Todos'))
-                    ->query(
-                        fn(Builder $query): Builder =>
-                        $query->where('funnel_id', $this->activeFunnel->id)
-                    ),
-            ];
-
-            foreach ($this->activeFunnel->stages as $stage) {
-                $tabs[$stage->id] = Tab::make(__($stage->name))
-                    ->query(
-                        fn(Builder $query): Builder =>
-                        $query->where('funnel_id', $this->activeFunnel->id)
-                            ->where('funnel_stage_id', $stage->id)
-                    );
-            }
-
-            return $tabs;
+            return $this->getFunnelStagesTabs();
         }
 
+        return $this->getAllFunnelsTabs();
+    }
+
+    protected function getFunnelStagesTabs(): array
+    {
         $tabs = [
-            'funnel_all' => Tab::make(__('Todos')),
+            'all' => Tab::make(__('Todas as etapas'))
+                ->query(
+                    fn(Builder $query): Builder =>
+                    $query->where('funnel_id', $this->activeFunnel->id)
+                ),
         ];
 
-        $funnels = Funnel::with('stages')
+        foreach ($this->activeFunnel->stages as $stage) {
+            $tabs[$stage->id] = Tab::make(__($stage->name))
+                ->query(
+                    fn(Builder $query): Builder =>
+                    $query->where('funnel_id', $this->activeFunnel->id)
+                        ->where('funnel_stage_id', $stage->id)
+                );
+        }
+
+        return $tabs;
+    }
+
+    protected function getAllFunnelsTabs(): array
+    {
+        $tabs = [
+            'funnel_all' => Tab::make(__('Todos os funis')),
+        ];
+
+        $allFunnels = Funnel::with('stages')
             ->byStatuses(statuses: [1]) // 1 - Ativo
             ->get();
 
-        foreach ($funnels as $funnel) {
+        foreach ($allFunnels as $funnel) {
             $tabs['funnel_' . $funnel->id] = Tab::make(__($funnel->name))
                 ->query(
-                    fn($query) =>
+                    fn(Builder $query) =>
                     $query->where('funnel_id', $funnel->id)
                 );
         }
@@ -96,41 +120,64 @@ class ListBusinesses extends ListRecords
         return $tabs;
     }
 
-    public function mount(): void
-    {
-        parent::mount();
-
-        // $funnelId = request()->input('funnel_id');
-        // $this->setActiveFunnel(funnelId: $funnelId);
-    }
-
     public function updatedActiveTab(): void
     {
-        $isFunnelTab = str_starts_with($this->activeTab ?? '', 'funnel_');
-        $activeId = $isFunnelTab ? str_replace('funnel_', '', $this->activeTab) : $this->activeTab;
+        $activeTab = $this->activeFunnel
+            ? $this->activeTab
+            : str_replace('funnel_', '', $this->activeTab);
 
-        if ($isFunnelTab) {
-            $this->tableFilters['funnel_stage_substages']['funnel_id'] = $activeId !== 'all' ? $activeId : null;
+        $this->tableFilters['funnel_stage_substages']['funnel_substages'] = null;
+
+        if ($this->activeFunnel) {
+            $this->tableFilters['funnel_stage_substages']['funnel_stage_id'] = $activeTab !== 'all'
+                ? (int) $activeTab
+                : null;
         }
 
-        if (!$isFunnelTab) {
-            $this->tableFilters['funnel_stage_substages']['funnel_stage_id'] = $activeId !== 'all' ? $activeId : null;
+        if (!$this->activeFunnel) {
+            $this->tableFilters['funnel_stage_substages']['funnel_id'] = $activeTab !== 'all'
+                ? (int) $activeTab
+                : null;
         }
     }
 
-    // public function updatedTableFiltersFunnelStageSubstagesFunnelId(): void
-    // {
-    //     $funnelId = $this->tableFilters['funnel_stage_substages']['funnel_id'];
-    //     $this->setActiveFunnel(funnelId: $funnelId);
-    // }
+    public function updatedTableFilters(): void
+    {
+        parent::updatedTableFilters();
+
+        $this->syncActiveTabWithFilters();
+    }
+
+    protected function syncActiveTabWithFilters(): void
+    {
+        $filterData = $this->tableFilters['funnel_stage_substages'] ?? [];
+
+        if ($this->activeFunnel) {
+            if (is_numeric($filterData['funnel_stage_id'] ?? null)) {
+                $this->activeTab = $filterData['funnel_stage_id'];
+                return;
+            }
+
+            $this->activeTab = 'all';
+            return;
+        }
+
+        if (is_numeric($filterData['funnel_id'] ?? null)) {
+            $this->activeTab = 'funnel_' . $filterData['funnel_id'];
+            return;
+        }
+
+        $this->activeTab = 'funnel_all';
+    }
 
     protected function setActiveFunnel(int|string|null $funnelId): void
     {
-        if ($funnelId) {
-            $this->activeFunnel = Funnel::with('stages')
-                ->byStatuses([1]) // 1 - Ativo
-                ->where('id', (int) $funnelId)
-                ->first();
+        if (blank($funnelId)) {
+            return;
         }
+
+        $this->activeFunnel = Funnel::with('stages')
+            ->byStatuses([1]) // 1 - Ativo
+            ->find($funnelId);
     }
 }

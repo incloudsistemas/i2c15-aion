@@ -197,6 +197,10 @@ class RoleResource extends Resource
                 ->query(
                     fn(RoleService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(RoleService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -231,6 +235,10 @@ class RoleResource extends Resource
                 ->query(
                     fn(RoleService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(RoleService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

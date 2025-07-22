@@ -26,9 +26,10 @@ return [
             '[CRM] Negócios'                      => 'c,r,u,d',
             // '[CRM] Filas'                         => 'c,r,u,d',
 
-            // '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
-            // '[Financeiro] Transações Financeiras' => 'c,r,u,d',
-            // '[Financeiro] Categorias'             => 'c,r,u,d',
+            '[Financeiro] Instituições Bancárias' => 'c,r,u,d',
+            '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
+            '[Financeiro] Transações Financeiras' => 'c,r,u,d',
+            '[Financeiro] Categorias'             => 'c,r,u,d',
 
             // '[CMS] Páginas'         => 'c,r,u,d',
             // '[CMS] Blog'            => 'c,r,u,d',
@@ -58,9 +59,10 @@ return [
             '[CRM] Negócios'                      => 'c,r,u,d',
             // '[CRM] Filas'                         => 'c,r,u,d',
 
-            // '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
-            // '[Financeiro] Transações Financeiras' => 'c,r,u,d',
-            // '[Financeiro] Categorias'             => 'c,r,u,d',
+            // '[Financeiro] Instituições Bancárias' => 'c,r,u,d',
+            '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
+            '[Financeiro] Transações Financeiras' => 'c,r,u,d',
+            '[Financeiro] Categorias'             => 'c,r,u,d',
 
             // '[CMS] Páginas'         => 'c,r,u,d',
             // '[CMS] Blog'            => 'c,r,u,d',
@@ -76,7 +78,7 @@ return [
         'Líder' => [
             '[CRM] Contatos' => 'c,r,u,d',
             '[CRM] Negócios' => 'c,r,u,d',
-            // '[CRM] Filas' => 'c,r,u,d',
+            // '[CRM] Filas'    => 'c,r,u,d',
 
             // '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
             // '[Financeiro] Transações Financeiras' => 'c,r,u,d',
@@ -94,9 +96,10 @@ return [
         ],
         // FINANCEIRO: acesso restrito a módulos financeiros da empresa.
         'Financeiro' => [
-            // '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
-            // '[Financeiro] Transações Financeiras' => 'c,r,u,d',
-            // '[Financeiro] Categorias'             => 'c,r,u,d',
+            // '[Financeiro] Instituições Bancárias' => 'c,r,u,d',
+            '[Financeiro] Contas Bancárias'       => 'c,r,u,d',
+            '[Financeiro] Transações Financeiras' => 'c,r,u,d',
+            '[Financeiro] Categorias'             => 'c,r,u,d',
         ],
         // MARKETING: gerencia conteúdo e campanhas publicitárias do sistema.
         'Marketing' => [

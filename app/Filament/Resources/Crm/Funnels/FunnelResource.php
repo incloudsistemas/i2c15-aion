@@ -74,7 +74,8 @@ class FunnelResource extends Resource
                     ->default(1)
                     ->selectablePlaceholder(false)
                     ->required()
-                    ->native(false),
+                    ->native(false)
+                    ->visibleOn('edit'),
             ])
             ->columns(2)
             ->collapsible();
@@ -342,6 +343,10 @@ class FunnelResource extends Resource
                 ->query(
                     fn(FunnelService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn (FunnelService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -376,6 +381,10 @@ class FunnelResource extends Resource
                 ->query(
                     fn(FunnelService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn (FunnelService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

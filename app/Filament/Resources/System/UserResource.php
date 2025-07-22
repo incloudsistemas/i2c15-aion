@@ -235,8 +235,9 @@ class UserResource extends Resource
                     ->options(UserStatusEnum::class)
                     ->default(1)
                     ->selectablePlaceholder(false)
+                    ->native(false)
                     ->required()
-                    ->native(false),
+                    ->visibleOn('edit'),
             ])
             ->columns(2)
             ->collapsible();
@@ -579,6 +580,10 @@ class UserResource extends Resource
                 ->query(
                     fn(UserService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn (UserService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -613,6 +618,10 @@ class UserResource extends Resource
                 ->query(
                     fn(UserService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn (UserService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

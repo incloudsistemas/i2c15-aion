@@ -265,7 +265,7 @@ class TaskService extends ActivityService
         $startDate = Carbon::parse($parentTask->start_date);
         $endDate = $parentTask->end_date ? Carbon::parse($parentTask->end_date) : $startDate;
 
-        for ($i = 0; $i < $taskData['repeat_occurrence']; $i++) {
+        for ($key = 0; $key < $taskData['repeat_occurrence']; $key++) {
             [$startDate, $endDate] = $this->calculateNextDates(
                 frequency: (int) $taskData['repeat_frequency'],
                 startDate: $startDate,
@@ -291,35 +291,35 @@ class TaskService extends ActivityService
     protected function calculateNextDates(int $frequency, Carbon $startDate, Carbon $endDate): array
     {
         switch ($frequency) {
-            case 1:
+            case 1: // Diário
                 $startDate->addDay();
                 $endDate->addDay();
                 break;
-            case 2:
+            case 2: // Semanal
                 $startDate->addWeek();
                 $endDate->addWeek();
                 break;
-            case 3:
+            case 3: // Mensal
                 $startDate->addMonth();
                 $endDate->addMonth();
                 break;
-            case 4:
+            case 4: // Bimestral
                 $startDate->addMonths(2);
                 $endDate->addMonths(2);
                 break;
-            case 5:
+            case 5: // Trimestral
                 $startDate->addMonths(3);
                 $endDate->addMonths(3);
                 break;
-            case 6:
+            case 6: // Semestral
                 $startDate->addMonths(6);
                 $endDate->addMonths(6);
                 break;
-            case 7:
+            case 7: // Anual
                 $startDate->addYear();
                 $endDate->addYear();
                 break;
-            case 8:
+            case 8: // Dias da semana
                 do {
                     $startDate->addDay();
                 } while ($startDate->isWeekend());

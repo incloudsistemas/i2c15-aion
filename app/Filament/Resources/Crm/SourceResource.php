@@ -67,7 +67,8 @@ class SourceResource extends Resource
                     ->default(1)
                     ->selectablePlaceholder(false)
                     ->native(false)
-                    ->required(),
+                    ->required()
+                    ->visibleOn('edit'),
             ]);
     }
 
@@ -192,6 +193,10 @@ class SourceResource extends Resource
                 ->query(
                     fn(SourceService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(SourceService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -226,6 +231,10 @@ class SourceResource extends Resource
                 ->query(
                     fn(SourceService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(SourceService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

@@ -10,6 +10,9 @@ use Database\Seeders\Crm\Funnels\FunnelsSeeder;
 use Database\Seeders\Crm\Funnels\FunnelStagesSeeder;
 use Database\Seeders\Crm\Funnels\FunnelSubstagesSeeder;
 use Database\Seeders\Crm\SourcesSeeder;
+use Database\Seeders\Financial\BankAccountsSeeder;
+use Database\Seeders\Financial\BankInstitutionsSeeder;
+use Database\Seeders\Financial\CategoriesSeeder as FinancialCategoriesSeeder;
 use Database\Seeders\System\AgenciesSeeder;
 use Database\Seeders\System\RolesAndPermissionsSeeder;
 use Database\Seeders\System\TeamsSeeder;
@@ -38,6 +41,10 @@ class DatabaseSeeder extends Seeder
             // FunnelSubstagesSeeder::class,
             DefaultFunnelsSeeder::class,
             BusinessSeeder::class,
+
+            FinancialCategoriesSeeder::class,
+            BankInstitutionsSeeder::class,
+            BankAccountsSeeder::class,
         ]);
     }
 }

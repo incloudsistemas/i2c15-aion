@@ -11,6 +11,7 @@ use App\Enums\ProfileInfos\MaritalStatusEnum;
 use App\Enums\ProfileInfos\UserStatusEnum;
 use App\Models\Crm\Business\Business;
 use App\Models\Crm\Contacts\Contact;
+use App\Models\Financial\Transaction;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Models\Polymorphics\Address;
 use App\Models\Polymorphics\SystemInteraction;
@@ -118,6 +119,11 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     public function ownActivities(): HasMany
     {
         return $this->hasMany(related: Activity::class, foreignKey: 'user_id');
+    }
+
+    public function financialTransactions(): HasMany
+    {
+        return $this->hasMany(related: Transaction::class, foreignKey: 'user_id');
     }
 
     public function business(): BelongsToMany

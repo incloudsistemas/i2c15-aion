@@ -223,8 +223,13 @@ class ContactService extends BaseService
             );
     }
 
-    public function validateEmail(?Contact $contact, string $contactableType, string $attribute, string $state, Closure $fail): void
-    {
+    public function validateEmail(
+        ?Contact $contact,
+        string $contactableType,
+        string $attribute,
+        string $state,
+        Closure $fail
+    ): void {
         $userId = auth()->user()->id;
 
         if ($contact) {
@@ -244,8 +249,13 @@ class ContactService extends BaseService
         }
     }
 
-    public function validatePhone(?Contact $contact, string $contactableType, string $attribute, string $state, Closure $fail): void
-    {
+    public function validatePhone(
+        ?Contact $contact,
+        string $contactableType,
+        string $attribute,
+        string $state,
+        Closure $fail
+    ): void {
         $userId = auth()->user()->id;
 
         if ($contact) {
@@ -549,7 +559,7 @@ class ContactService extends BaseService
             $contact = $record instanceof Contact ? $record : $record->contact;
 
             if (
-                !$this->checkOwnerAccess(user: auth()->user(), contact: $contact)
+                !$this->checkOwnerAccess(contact: $contact)
                 || $this->isAssignedToBusiness(contact: $contact)
             ) {
                 $blocked[] = $contact->name;
@@ -586,9 +596,10 @@ class ContactService extends BaseService
         }
     }
 
-    // Rules for contacts, individuals and Legal Entities
-    public function checkOwnerAccess(User $user, Contact $contact): bool
+    public function checkOwnerAccess(?User $user = null, Contact $contact): bool
     {
+        $user = $user ?? auth()->user();
+
         if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
             return true;
         }

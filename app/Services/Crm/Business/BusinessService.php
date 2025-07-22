@@ -4,6 +4,9 @@ namespace App\Services\Crm\Business;
 
 use App\Enums\Crm\Business\PriorityEnum;
 use App\Models\Crm\Business\Business;
+use App\Models\Crm\Funnels\Funnel;
+use App\Models\Crm\Funnels\FunnelStage;
+use App\Models\Crm\Funnels\FunnelSubstage;
 use App\Models\System\User;
 use App\Services\BaseService;
 use Filament\Notifications\Notification;
@@ -145,6 +148,33 @@ class BusinessService extends BaseService
             });
     }
 
+    public function tableFilterIndicateUsingByCurrentBusinessFunnelStages(array $data): ?string
+    {
+        if (!$data['funnel_id']) {
+            return null;
+        }
+
+        $indicator = [];
+
+        $funnel = Funnel::find($data['funnel_id']);
+        $indicator[] = __('Funil') . ': ' . ($funnel->name ?? __('Não especificado'));
+
+        if (!empty($data['funnel_stage_id'])) {
+            $stage = FunnelStage::find($data['funnel_stage_id']);
+            $indicator[] = __('Etapa') . ': ' . ($stage->name ?? __('Não especificado'));
+        }
+
+        if (!empty($data['funnel_substages'])) {
+            $substages = FunnelSubstage::whereIn('id', $data['funnel_substages'])
+                ->pluck('name')
+                ->implode(', ');
+
+            $indicator[] = __('Sub-etapa(s)') . ': ' . ($substages ?: __('Não especificadas'));
+        }
+
+        return implode(' | ', $indicator);
+    }
+
     public function getQueryByElementsWhereHasBusinessBasedOnAuthRoles(Builder $query): Builder
     {
         $user = auth()->user();
@@ -181,6 +211,34 @@ class BusinessService extends BaseService
                 fn(Builder $query, $price): Builder =>
                 $query->where('price', '<=', $price),
             );
+    }
+
+    public function tableFilterIndicateUsingByPrice(array $data): ?string
+    {
+        $min = $data['min_price'] ?? null;
+        $max = $data['max_price'] ?? null;
+
+        if (blank($min) && blank($max)) {
+            return null;
+        }
+
+        $parts = [];
+        if ($min && $max) {
+            if ($min === $max) {
+                $parts[] = __('Valor igual a: :value', ['value' => $min]);
+            } else {
+                $parts[] = __('Valor entre: :min e :max', [
+                    'min' => $min,
+                    'max' => $max
+                ]);
+            }
+        } elseif ($min) {
+            $parts[] = __('Valor (mín.): :value', ['value' => $min]);
+        } elseif ($max) {
+            $parts[] = __('Valor (máx.): :value', ['value' => $max]);
+        }
+
+        return implode(' | ', $parts);
     }
 
     public function getQueryByCurrentUsersWhereHasBusinessBasedOnAuthRoles(Builder $query): Builder
@@ -294,7 +352,7 @@ class BusinessService extends BaseService
         $allowed = [];
 
         foreach ($records as $business) {
-            if (!$this->checkOwnerAccess(user: auth()->user(), business: $business)) {
+            if (!$this->checkOwnerAccess(business: $business)) {
                 $blocked[] = $business->name;
                 continue;
             }
@@ -329,8 +387,10 @@ class BusinessService extends BaseService
         }
     }
 
-    public function checkOwnerAccess(User $user, Business $business): bool
+    public function checkOwnerAccess(?User $user = null, Business $business): bool
     {
+        $user = $user ?? auth()->user();
+
         if ($user->hasAnyRole(['Superadministrador', 'Administrador'])) {
             return true;
         }

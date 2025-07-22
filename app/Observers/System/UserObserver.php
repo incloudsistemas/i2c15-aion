@@ -24,8 +24,10 @@ class UserObserver
 
     public function deleted(User $user): void
     {
-        $user->email = $user->email . '//deleted_' . md5(uniqid());
-        $user->cpf = !empty($user->cpf) ? $user->cpf . '//deleted_' . md5(uniqid()) : null;
+        $deleted = '//deleted_' . md5(uniqid());
+
+        $user->email = $user->email . $deleted;
+        $user->cpf = !empty($user->cpf) ? $user->cpf . $deleted : null;
 
         $user->save();
     }

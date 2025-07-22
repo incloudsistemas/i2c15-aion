@@ -24,6 +24,8 @@ class EditBusiness extends EditRecord
 
     protected BusinessFunnelStage $currentBusinessFunnelStage;
 
+    protected Business $rawOriginalBusiness;
+
     protected Funnel $funnel;
 
     protected FunnelStage $funnelStage;
@@ -71,6 +73,8 @@ class EditBusiness extends EditRecord
         $this->currentContactId = $this->record->contact_id;
 
         $this->currentBusinessFunnelStage = $this->record->currentBusinessFunnelStage;
+
+        $this->rawOriginalBusiness = $this->record;
 
         $this->funnel = Funnel::findOrFail($this->data['funnel_id']);
 

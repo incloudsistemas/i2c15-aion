@@ -6,16 +6,15 @@ use App\Casts\DateTimeCast;
 use App\Casts\FloatCast;
 use App\Enums\Crm\Business\PriorityEnum;
 use App\Models\Crm\Source;
-use App\Models\Crm\Business\Activity as BusinessActivity;
 use App\Models\Crm\Business\FunnelStage as BusinessFunnelStage;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Funnels\Funnel;
 use App\Models\Crm\Funnels\FunnelStage;
 use App\Models\Crm\Funnels\FunnelSubstage;
+use App\Models\Financial\Transaction;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Models\System\User;
 use App\Observers\Crm\Business\BusinessObserver;
-use App\Traits\Polymorphics\Activityable;
 use App\Traits\Polymorphics\SystemInteractable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -75,6 +74,11 @@ class Business extends Model implements HasMedia
     public function activities(): HasMany
     {
         return $this->hasMany(related: Activity::class, foreignKey: 'business_id');
+    }
+
+    public function financialTransactions(): HasMany
+    {
+        return $this->hasMany(related: Transaction::class, foreignKey: 'business_id');
     }
 
     public function source(): BelongsTo

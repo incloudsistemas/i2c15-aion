@@ -186,6 +186,10 @@ class PermissionResource extends Resource
                 ->query(
                     fn(PermissionService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(PermissionService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -220,6 +224,10 @@ class PermissionResource extends Resource
                 ->query(
                     fn(PermissionService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(PermissionService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

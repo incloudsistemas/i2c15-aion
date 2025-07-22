@@ -9,8 +9,6 @@ use App\Filament\Resources\Polymorphics\RelationManagers\AddressesRelationManage
 use App\Filament\Resources\Polymorphics\RelationManagers\MediaRelationManager;
 use App\Models\Crm\Contacts\LegalEntity;
 use App\Models\Polymorphics\Address;
-use App\Models\System\Team;
-use App\Models\System\User;
 use App\Services\Crm\Contacts\ContactService;
 use App\Services\Crm\Contacts\IndividualService;
 use App\Services\Crm\Contacts\LegalEntityService;
@@ -611,6 +609,10 @@ class LegalEntityResource extends Resource
                 ->query(
                     fn(ContactService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByContactCreatedAt(query: $query, data: $data),
+                )
+                ->indicateUsing(
+                    fn(ContactService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('contact.updated_at')
                 ->label(__('Últ. atualização'))
@@ -645,6 +647,10 @@ class LegalEntityResource extends Resource
                 ->query(
                     fn(ContactService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByContactUpdatedAt(query: $query, data: $data),
+                )
+                ->indicateUsing(
+                    fn(ContactService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

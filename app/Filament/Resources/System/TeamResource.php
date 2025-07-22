@@ -135,7 +135,8 @@ class TeamResource extends Resource
                     ->default(1)
                     ->selectablePlaceholder(false)
                     ->native(false)
-                    ->required(),
+                    ->required()
+                    ->visibleOn('edit'),
             ])
             ->columns(2)
             ->collapsible();
@@ -357,6 +358,10 @@ class TeamResource extends Resource
                 ->query(
                     fn(TeamService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn (TeamService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -391,6 +396,10 @@ class TeamResource extends Resource
                 ->query(
                     fn(TeamService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn (TeamService $service, array $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }

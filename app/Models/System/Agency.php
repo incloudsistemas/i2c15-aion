@@ -3,6 +3,7 @@
 namespace App\Models\System;
 
 use App\Enums\DefaultStatusEnum;
+use App\Models\Financial\BankAccount;
 use App\Observers\System\AgencyObserver;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Builder;
@@ -65,6 +66,11 @@ class Agency extends Model implements HasMedia
      * RELATIONSHIPS.
      *
      */
+
+    public function bankAccounts(): HasMany
+    {
+        return $this->hasMany(related: BankAccount::class, foreignKey: 'agency_id');
+    }
 
     public function users(): BelongsToMany
     {
