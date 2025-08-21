@@ -13,6 +13,8 @@ use App\Models\Polymorphics\Address;
 use App\Services\Crm\Contacts\ContactService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
@@ -280,7 +282,7 @@ class ContactResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -290,7 +292,7 @@ class ContactResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -303,7 +305,7 @@ class ContactResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(ContactService $service, array $state): ?string =>
+                    fn(ContactService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -318,7 +320,7 @@ class ContactResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -328,7 +330,7 @@ class ContactResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -341,7 +343,7 @@ class ContactResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(ContactService $service, array $state): ?string =>
+                    fn(ContactService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -363,7 +365,7 @@ class ContactResource extends Resource
                                     ->collection('avatar')
                                     ->conversion('thumb')
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('name')
@@ -372,55 +374,55 @@ class ContactResource extends Resource
                                     ->label(__('Tipo(s)'))
                                     ->badge()
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('email')
                                     ->label(__('Email'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_additional_emails')
                                     ->label(__('Emails adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_main_phone_with_name')
                                     ->label(__('Telefone'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_additional_phones')
                                     ->label(__('Telefones adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.cnpj')
                                     ->label(__('CNPJ'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.url')
                                     ->label(__('URL do site'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.cpf')
                                     ->label(__('CPF'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.rg')
                                     ->label(__('RG'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.gender')
@@ -432,25 +434,25 @@ class ContactResource extends Resource
                                 Infolists\Components\TextEntry::make('contactable.display_birth_date')
                                     ->label(__('Dt. nascimento'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('source.name')
                                     ->label(__('Origem'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('owner.name')
                                     ->label(__('Captador'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('complement')
                                     ->label(__('Sobre'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
@@ -489,14 +491,14 @@ class ContactResource extends Resource
                                         Infolists\Components\IconEntry::make('is_main')
                                             ->label(__('Principal'))
                                             ->icon(
-                                                fn(bool $state): string =>
+                                                fn(mixed $state): string =>
                                                 match ($state) {
                                                     false => 'heroicon-m-minus-small',
                                                     true  => 'heroicon-o-check-circle',
                                                 }
                                             )
                                             ->color(
-                                                fn(bool $state): string =>
+                                                fn(mixed $state): string =>
                                                 match ($state) {
                                                     true    => 'success',
                                                     default => 'gray',
@@ -547,6 +549,25 @@ class ContactResource extends Resource
                                 fn(Contact $record): bool =>
                                 $record->contactable->attachments?->count() > 0
                             ),
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('contactable.logActivities')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('description')
+                                            ->hiddenLabel()
+                                            ->html()
+                                            ->columnSpan(3),
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),

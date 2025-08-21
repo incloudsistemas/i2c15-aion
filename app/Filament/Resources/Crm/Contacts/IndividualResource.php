@@ -97,7 +97,7 @@ class IndividualResource extends Resource
                         function (ContactService $service, ?Individual $record): Closure {
                             return function (
                                 string $attribute,
-                                string $state,
+                                mixed $state,
                                 Closure $fail
                             ) use ($service, $record): void {
                                 $contactableType = MorphMapByClass(model: Individual::class);
@@ -137,7 +137,7 @@ class IndividualResource extends Resource
                             ->autocomplete(false),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['email'] ?? null
                     )
                     ->addActionLabel(__('Adicionar email'))
@@ -168,7 +168,7 @@ class IndividualResource extends Resource
                                 function (ContactService $service, ?Individual $record): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service, $record): void {
                                         $contactableType = MorphMapByClass(model: Individual::class);
@@ -200,7 +200,7 @@ class IndividualResource extends Resource
                             ->autocomplete(false),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['number'] ?? null
                     )
                     ->addActionLabel(__('Adicionar telefone'))
@@ -298,7 +298,7 @@ class IndividualResource extends Resource
                         function (IndividualService $service, ?Individual $record): Closure {
                             return function (
                                 string $attribute,
-                                string $state,
+                                mixed $state,
                                 Closure $fail
                             ) use ($service, $record): void {
                                 $service->validateCpf(
@@ -559,7 +559,7 @@ class IndividualResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -569,7 +569,7 @@ class IndividualResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -582,7 +582,7 @@ class IndividualResource extends Resource
                     $service->tableFilterByContactCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(ContactService $service, array $state): ?string =>
+                    fn(ContactService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('contact.updated_at')
@@ -597,7 +597,7 @@ class IndividualResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -607,7 +607,7 @@ class IndividualResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -620,7 +620,7 @@ class IndividualResource extends Resource
                     $service->tableFilterByContactUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(ContactService $service, array $state): ?string =>
+                    fn(ContactService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -642,7 +642,7 @@ class IndividualResource extends Resource
                                     ->collection('avatar')
                                     ->conversion('thumb')
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.name')
@@ -651,79 +651,79 @@ class IndividualResource extends Resource
                                     ->label(__('Tipo(s)'))
                                     ->badge()
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.email')
                                     ->label(__('Email'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_additional_emails')
                                     ->label(__('Emails adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_main_phone_with_name')
                                     ->label(__('Telefone'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_additional_phones')
                                     ->label(__('Telefones adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('cpf')
                                     ->label(__('CPF'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('rg')
                                     ->label(__('RG'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('gender')
                                     ->label(__('Sexo'))
                                     ->visible(
-                                        fn(?GenderEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_birth_date')
                                     ->label(__('Dt. nascimento'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('occupation')
                                     ->label(__('Cargo'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.source.name')
                                     ->label(__('Origem'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.owner.name')
                                     ->label(__('Captador'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.complement')
                                     ->label(__('Sobre'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
@@ -762,14 +762,14 @@ class IndividualResource extends Resource
                                         Infolists\Components\IconEntry::make('is_main')
                                             ->label(__('Principal'))
                                             ->icon(
-                                                fn(bool $state): string =>
+                                                fn(mixed $state): string =>
                                                 match ($state) {
                                                     false => 'heroicon-m-minus-small',
                                                     true  => 'heroicon-o-check-circle',
                                                 }
                                             )
                                             ->color(
-                                                fn(bool $state): string =>
+                                                fn(mixed $state): string =>
                                                 match ($state) {
                                                     true    => 'success',
                                                     default => 'gray',
@@ -820,6 +820,25 @@ class IndividualResource extends Resource
                                 fn(Individual $record): bool =>
                                 $record->attachments?->count() > 0
                             ),
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('logActivities')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('description')
+                                            ->hiddenLabel()
+                                            ->html()
+                                            ->columnSpan(3),
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),

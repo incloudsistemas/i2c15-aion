@@ -3,6 +3,7 @@
 namespace App\Observers\Financial;
 
 use App\Models\Financial\BankAccount;
+use App\Services\Polymorphics\ActivityLogService;
 
 class BankAccountObserver
 {
@@ -27,6 +28,17 @@ class BankAccountObserver
      */
     public function deleted(BankAccount $bankAccount): void
     {
+        $bankAccount->load([
+            'bankInstitution:id,name',
+            'agency:id,name',
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logDeletedActivity(
+            oldRecord: $bankAccount,
+            description: "Conta bancária <b>{$bankAccount->name}</b> excluído por <b>" . auth()->user()->name . "</b>"
+        );
+
         $bankAccount->name = $bankAccount->name . '//deleted_' . md5(uniqid());
         $bankAccount->save();
     }

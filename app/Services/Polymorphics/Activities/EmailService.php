@@ -6,15 +6,22 @@ use App\Models\Crm\Business\Business;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Models\Polymorphics\Activities\Email;
+use App\Models\System\User;
+use App\Services\Polymorphics\ActivityLogService;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class EmailService extends ActivityService
 {
-    public function __construct(protected Activity $activity, protected Email $email)
-    {
-        parent::__construct(activity: $activity);
+    public function __construct(
+        protected Activity $activity,
+        protected Email $email,
+        protected ActivityLogService $logService
+    ) {
+        parent::__construct(activity: $activity, logService: $logService);
     }
 
     public function getQueryWhereHasEmails(Builder $query): Builder
@@ -72,6 +79,51 @@ class EmailService extends ActivityService
         return $data;
     }
 
+    public function createAction(Model $ownerRecord, array $data): Model
+    {
+        return DB::transaction(function () use ($ownerRecord, $data): Model {
+            $data['user_id'] = auth()->id();
+            $data['business_id'] = $ownerRecord instanceof Business ? $ownerRecord->id : null;
+
+            $data['email']['sender_mail'] = auth()->user()->email;
+            $data['email']['recipient_mails'] = $this->getRecipientMails(
+                contacts: $data['contacts'],
+                users: $data['users']
+            );
+
+            $email = $this->email->create($data['email']);
+
+            $activity = $email->activity()
+                ->create($data);
+
+            $this->attachContacts(activity: $activity, contacts: $data['contacts']);
+
+            $this->attachUsers(activity: $activity, users: $data['users']);
+
+            $this->createAttachments(activity: $activity, attachments: $data['attachments']);
+
+            // Log
+            $activity->load([
+                'activityable',
+                'owner:id,name',
+                'users:id,name',
+                'contacts:id,name',
+            ]);
+
+            $this->logService->logOwnerRecordRelationCreatedActivity(
+                ownerRecord: $ownerRecord,
+                currentRecord: $activity,
+                description: $this->getActivityLogDescription(
+                    activity: $activity,
+                    event: 'created'
+                ),
+                logName: $activity->activityable_type
+            );
+
+            return $ownerRecord;
+        });
+    }
+
     public function mutateRecordDataToEdit(Model $ownerRecord, Activity $activity, array $data): array
     {
         // dd($ownerRecord);
@@ -92,48 +144,25 @@ class EmailService extends ActivityService
         return $data;
     }
 
-    public function createAction(Model $ownerRecord, array $data): Model
-    {
-        return DB::transaction(function () use ($ownerRecord, $data): Model {
-            $data['user_id'] = auth()->id();
-            $data['business_id'] = $ownerRecord instanceof Business ? $ownerRecord->id : null;
-
-            $data['email']['sender_mail'] = auth()->user()->email;
-            $data['email']['recipient_mails'] = $this->getRecipientMails(contacts: $data['contacts']);
-
-            $email = $this->email->create($data['email']);
-
-            $activity = $email->activity()
-                ->create($data);
-
-            $this->attachContacts(activity: $activity, contacts: $data['contacts']);
-
-            $this->attachUsers(activity: $activity, users: $data['users']);
-
-            $this->createAttachments(activity: $activity, attachments: $data['attachments']);
-
-            // is business
-            if ($activity->business_id) {
-                $this->logBusinessSystemInteractions(
-                    business: $ownerRecord,
-                    activity: $activity,
-                    description: $this->getSystemInteractionDescription(sentence: $activity->subject, action: 'cadastrado'),
-                    currentData: $this->getSystemInteractionData(activity: $activity),
-                );
-            }
-
-            return $ownerRecord;
-        });
-    }
-
     public function editAction(Model $ownerRecord, Activity $activity, array $data): Model
     {
         return DB::transaction(function () use ($ownerRecord, $activity, $data): Model {
-            $oldData = $this->getSystemInteractionData(activity: $activity);
+            $activity->load([
+                'activityable',
+                'owner:id,name',
+                'users:id,name',
+                'contacts:id,name',
+            ]);
+
+            $oldRecord = $activity->replicate()
+                ->toArray();
 
             $activity->update($data);
 
-            $data['email']['recipient_mails'] = $this->getRecipientMails(contacts: $data['contacts']);
+            $data['email']['recipient_mails'] = $this->getRecipientMails(
+                contacts: $data['contacts'],
+                users: $data['users']
+            );
 
             $activity->activityable->update($data['email']);
 
@@ -143,76 +172,53 @@ class EmailService extends ActivityService
 
             $this->createAttachments(activity: $activity, attachments: $data['attachments']);
 
-            // is business
-            if ($activity->business_id) {
-                $this->logBusinessSystemInteractions(
-                    business: $ownerRecord,
+            // Log
+            // reload for nxn relationships
+            $activity->load([
+                'activityable',
+                'owner:id,name',
+                'users:id,name',
+                'contacts:id,name',
+            ]);
+
+            $this->logService->logOwnerRecordRelationUpdatedActivity(
+                ownerRecord: $ownerRecord,
+                currentRecord: $activity,
+                oldRecord: $oldRecord,
+                description: $this->getActivityLogDescription(
                     activity: $activity,
-                    description: $this->getSystemInteractionDescription(sentence: $activity->subject, action: 'editado'),
-                    currentData: $this->getSystemInteractionData(activity: $activity),
-                    oldData: $oldData,
-                );
-            }
+                    event: 'updated'
+                ),
+                logName: $activity->activityable_type
+            );
 
             return $ownerRecord;
         });
     }
 
-    public function deleteAction(Model $ownerRecord, Activity $activity): bool
+    protected function getRecipientMails(array $contacts, array $users): ?array
     {
-        return DB::transaction(function () use ($ownerRecord, $activity): bool {
-            $deleted = $activity->activityable->delete();
+        $recipientMails = [];
 
-            if ($deleted && $activity->business_id) {
-                $this->logBusinessSystemInteractions(
-                    business: $ownerRecord,
-                    activity: $activity,
-                    description: $this->getSystemInteractionDescription(sentence: $activity->subject, action: 'deletado'),
-                    currentData: $this->getSystemInteractionData(activity: $activity),
-                );
-            }
+        if (!empty($contacts)) {
+            $contactMails = Contact::whereIn('id', $contacts)
+                ->pluck('email')
+                ->toArray();
 
-            return $deleted;
-        });
-    }
-
-    protected function getRecipientMails(array $contacts): ?array
-    {
-        $recipientMails = Contact::whereIn('id', $contacts)
-            ->pluck('email')
-            ->toArray();
-
-        if (empty($recipientMails)) {
-            $recipientMails = null;
+            $recipientMails = array_merge($recipientMails, $contactMails);
         }
 
-        return $recipientMails;
-    }
+        if (!empty($users)) {
+            $userMails = User::whereIn('id', $users)
+                ->pluck('email')
+                ->toArray();
 
-    protected function getSystemInteractionDescription(string $sentence, string $action): string
-    {
-        $userName = auth()->user()->name;
+            $recipientMails = array_merge($recipientMails, $userMails);
+        }
 
-        return "Email: {$sentence}, {$action} por: {$userName}";
-    }
+        $recipientMails = array_values(array_unique($recipientMails));
 
-    protected function getSystemInteractionData(Activity $activity): array
-    {
-        $users = $activity->users()
-            ->pluck('name')
-            ->implode(', ');
-
-        $contacts = $activity->contacts()
-            ->pluck('name')
-            ->implode(', ');
-
-        return [
-            'subject'  => $activity->subject,
-            'users'    => $users,
-            'contacts' => $contacts,
-            'body'     => $activity->body,
-            'send_at'  => $activity->activityable->send_at,
-        ];
+        return empty($recipientMails) ? null : $recipientMails;
     }
 
     /**
@@ -233,5 +239,95 @@ class EmailService extends ActivityService
 
         //     $action->halt();
         // }
+    }
+
+    public function deleteAction(Model $ownerRecord, Activity $activity): bool
+    {
+        return DB::transaction(function () use ($ownerRecord, $activity): bool {
+            $deleted = $activity->activityable->delete();
+
+            if ($deleted) {
+                // Log
+                $this->logService->logOwnerRecordRelationDeletedActivity(
+                    ownerRecord: $ownerRecord,
+                    oldRecord: $activity,
+                    description: $this->getActivityLogDescription(
+                        activity: $activity,
+                        event: 'deleted'
+                    ),
+                    logName: $activity->activityable_type
+                );
+            }
+
+            return $deleted;
+        });
+    }
+
+    public function deleteBulkAction(Collection $records, Model $ownerRecord): void
+    {
+        $blocked = [];
+        $allowed = [];
+
+        foreach ($records as $activity) {
+            // if ($this->checkOwnerAccess(activity: $activity, ownerRecord: $ownerRecord)) {
+            //     $blocked[] = $activity->name;
+            //     continue;
+            // }
+
+            $allowed[] = $activity;
+        }
+
+        if (!empty($blocked)) {
+            $displayBlocked = array_slice($blocked, 0, 5);
+            $extraCount = count($blocked) - 5;
+
+            $message = __('Os seguintes emails não podem ser excluídos: ') . implode(', ', $displayBlocked);
+
+            if ($extraCount > 0) {
+                $message .= " ... (+$extraCount " . __('outros') . ")";
+            }
+
+            Notification::make()
+                ->title(__('Alguns emails não puderam ser excluídos'))
+                ->warning()
+                ->body($message)
+                ->send();
+        }
+
+        collect($allowed)->each->delete();
+
+        if (!empty($allowed)) {
+            Notification::make()
+                ->title(__('Excluído'))
+                ->success()
+                ->send();
+        }
+    }
+
+    public function afterDeleteBulkAction(Model $ownerRecord, Collection $records): void
+    {
+        foreach ($records as $activity) {
+            // Log
+            $this->logService->logOwnerRecordRelationDeletedActivity(
+                ownerRecord: $ownerRecord,
+                oldRecord: $activity,
+                description: $this->getActivityLogDescription(
+                    activity: $activity,
+                    event: 'deleted'
+                ),
+                logName: $activity->activityable_type
+            );
+        }
+    }
+
+    protected function getActivityLogDescription(Activity $activity, string $event): string
+    {
+        $user = auth()->user();
+
+        return match ($event) {
+            'updated' => "Email <b>{$activity->subject}</b> atualizado por <b>{$user->name}</b>",
+            'deleted' => "Email <b>{$activity->subject}</b> excluído por <b>{$user->name}</b>",
+            default   => "Novo email <b>{$activity->subject}</b> cadastrado por <b>{$user->name}</b>",
+        };
     }
 }

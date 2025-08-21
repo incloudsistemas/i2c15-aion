@@ -4,6 +4,7 @@ namespace App\Filament\Resources\System\TeamResource\Pages;
 
 use App\Filament\Resources\System\TeamResource;
 use App\Models\System\Team;
+use App\Services\Polymorphics\ActivityLogService;
 use App\Services\System\TeamService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -11,6 +12,8 @@ use Filament\Resources\Pages\EditRecord;
 class EditTeam extends EditRecord
 {
     protected static string $resource = TeamResource::class;
+
+    protected array $oldRecord;
 
     protected function getHeaderActions(): array
     {
@@ -41,6 +44,18 @@ class EditTeam extends EditRecord
         return $data;
     }
 
+    protected function beforeSave(): void
+    {
+        $this->record->load([
+            'agency:id,name',
+            'coordinators:id,name',
+            'collaborators:id,name'
+        ]);
+
+        $this->oldRecord = $this->record->replicate()
+            ->toArray();
+    }
+
     protected function afterSave(): void
     {
         $this->syncCoordinatorUsers();
@@ -69,5 +84,21 @@ class EditTeam extends EditRecord
 
         $this->record->collaborators()
             ->sync($data);
+    }
+
+    protected function logActivity(): void
+    {
+        $this->record->load([
+            'agency:id,name',
+            'coordinators:id,name',
+            'collaborators:id,name'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logUpdatedActivity(
+            currentRecord: $this->record,
+            oldRecord: $this->oldRecord,
+            description: "Equipe <b>{$this->record->name}</b> atualizada por <b>" . auth()->user()->name . "</b>"
+        );
     }
 }

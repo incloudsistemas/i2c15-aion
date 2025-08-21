@@ -176,9 +176,17 @@ class BankAccountResource extends Resource
                                 fn(BankAccountService $service, BankAccount $record, array $data): array =>
                                 $service->mutateRecordDataToEdit(bankAccount: $record, data: $data)
                             )
+                            ->mutateFormDataUsing(
+                                fn(BankAccountService $service, BankAccount $record, array $data): array =>
+                                $service->mutateFormDataToEdit(bankAccount: $record, data: $data)
+                            )
                             ->before(
                                 fn(BankAccountService $service, BankAccount $record, array $data) =>
                                 $service->beforeEditAction(bankAccount: $record, data: $data)
+                            )
+                            ->after(
+                                fn(BankAccountService $service, BankAccount $record, array $data) =>
+                                $service->afterEditAction(bankAccount: $record, data: $data)
                             ),
                     ])
                         ->dropdown(false),
@@ -453,72 +461,99 @@ class BankAccountResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\TextEntry::make('id')
-                    ->label(__('#ID')),
-                Infolists\Components\TextEntry::make('name')
-                    ->label(__('Conta')),
-                Infolists\Components\TextEntry::make('bankInstitution.name')
-                    ->label(__('Instituição bancária'))
-                    ->visible(
-                        fn(mixed $state): bool =>
-                        !empty($state),
-                    ),
-                Infolists\Components\TextEntry::make('role')
-                    ->label(__('Tipo de conta'))
-                    ->visible(
-                        fn(mixed $state): bool =>
-                        !is_null($state),
-                    ),
-                Infolists\Components\TextEntry::make('type_person')
-                    ->label(__('Modalidade'))
-                    ->visible(
-                        fn(mixed $state): bool =>
-                        !is_null($state),
-                    ),
-                Infolists\Components\TextEntry::make('agency.name')
-                    ->label(__('Agência'))
-                    ->badge()
-                    ->visible(
-                        fn(mixed $state): bool =>
-                        !empty($state),
-                    ),
-                Infolists\Components\TextEntry::make('display_balance')
-                    ->label(__('Saldo inicial (R$)'))
-                    ->visible(
-                        fn(mixed $state): bool =>
-                        !empty($state),
-                    ),
-                Infolists\Components\TextEntry::make('balance_date')
-                    ->label(__('Início dos lançamentos'))
-                    ->dateTime('d/m/Y'),
-                Infolists\Components\IconEntry::make('is_main')
-                    ->label(__('Principal'))
-                    ->icon(
-                        fn(mixed $state): string =>
-                        match ($state) {
-                            false => 'heroicon-m-minus-small',
-                            true  => 'heroicon-o-check-circle',
-                        }
-                    )
-                    ->color(
-                        fn(mixed $state): string =>
-                        match ($state) {
-                            true    => 'success',
-                            default => 'gray',
-                        }
-                    ),
-                Infolists\Components\Grid::make(['default' => 3])
-                    ->schema([
-                        Infolists\Components\TextEntry::make('status')
-                            ->label(__('Status'))
-                            ->badge(),
-                        Infolists\Components\TextEntry::make('created_at')
-                            ->label(__('Cadastro'))
-                            ->dateTime('d/m/Y H:i'),
-                        Infolists\Components\TextEntry::make('updated_at')
-                            ->label(__('Últ. atualização'))
-                            ->dateTime('d/m/Y H:i'),
-                    ]),
+                Infolists\Components\Tabs::make('Label')
+                    ->tabs([
+                        Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
+                            ->schema([
+                                Infolists\Components\TextEntry::make('id')
+                                    ->label(__('#ID')),
+                                Infolists\Components\TextEntry::make('name')
+                                    ->label(__('Conta')),
+                                Infolists\Components\TextEntry::make('bankInstitution.name')
+                                    ->label(__('Instituição bancária'))
+                                    ->visible(
+                                        fn(mixed $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('role')
+                                    ->label(__('Tipo de conta'))
+                                    ->visible(
+                                        fn(mixed $state): bool =>
+                                        !is_null($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('type_person')
+                                    ->label(__('Modalidade'))
+                                    ->visible(
+                                        fn(mixed $state): bool =>
+                                        !is_null($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('agency.name')
+                                    ->label(__('Agência'))
+                                    ->badge()
+                                    ->visible(
+                                        fn(mixed $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('display_balance')
+                                    ->label(__('Saldo inicial (R$)'))
+                                    ->visible(
+                                        fn(mixed $state): bool =>
+                                        !empty($state),
+                                    ),
+                                Infolists\Components\TextEntry::make('balance_date')
+                                    ->label(__('Início dos lançamentos'))
+                                    ->dateTime('d/m/Y'),
+                                Infolists\Components\IconEntry::make('is_main')
+                                    ->label(__('Principal'))
+                                    ->icon(
+                                        fn(mixed $state): string =>
+                                        match ($state) {
+                                            false => 'heroicon-m-minus-small',
+                                            true  => 'heroicon-o-check-circle',
+                                        }
+                                    )
+                                    ->color(
+                                        fn(mixed $state): string =>
+                                        match ($state) {
+                                            true    => 'success',
+                                            default => 'gray',
+                                        }
+                                    ),
+                                Infolists\Components\Grid::make(['default' => 3])
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('status')
+                                            ->label(__('Status'))
+                                            ->badge(),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                        Infolists\Components\TextEntry::make('updated_at')
+                                            ->label(__('Últ. atualização'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ]),
+                            ]),
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('logActivities')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('description')
+                                            ->hiddenLabel()
+                                            ->html()
+                                            ->columnSpan(3),
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
             ])
             ->columns(3);
     }

@@ -424,7 +424,7 @@ abstract class TransactionResource extends Resource
                 ->columns(3)
                 ->columnSpanFull(),
             Forms\Components\TextInput::make('final_price')
-                ->label(__('Total'))
+                ->label(__('Valor final'))
                 // ->numeric()
                 ->prefix('R$')
                 ->mask(
@@ -1248,7 +1248,7 @@ abstract class TransactionResource extends Resource
                                     !empty($state),
                                 ),
                             Infolists\Components\TextEntry::make('display_final_price')
-                                ->label(__('Valor total (R$)'))
+                                ->label(__('Valor final (R$)'))
                                 ->visible(
                                     fn(mixed $state): bool =>
                                     !empty($state),
@@ -1256,6 +1256,12 @@ abstract class TransactionResource extends Resource
                             Infolists\Components\TextEntry::make('bankAccount.name')
                                 ->label(__('Conta bancária'))
                                 ->badge()
+                                ->visible(
+                                    fn(mixed $state): bool =>
+                                    !empty($state),
+                                ),
+                            Infolists\Components\TextEntry::make('payment_method')
+                                ->label(__('Método de pagamento'))
                                 ->visible(
                                     fn(mixed $state): bool =>
                                     !empty($state),
@@ -1445,24 +1451,6 @@ abstract class TransactionResource extends Resource
                                 )
                                 ->columnSpanFull(),
                         ]),
-                    Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
-                        ->schema([
-                            Infolists\Components\RepeatableEntry::make('systemInteractions')
-                                ->label('Interação(ões)')
-                                ->hiddenLabel()
-                                ->schema([
-                                    Infolists\Components\TextEntry::make('description')
-                                        ->hiddenLabel()
-                                        ->columnSpan(3),
-                                    Infolists\Components\TextEntry::make('owner.name')
-                                        ->label(__('Por:')),
-                                    Infolists\Components\TextEntry::make('created_at')
-                                        ->label(__('Cadastro'))
-                                        ->dateTime('d/m/Y H:i'),
-                                ])
-                                ->columns(5)
-                                ->columnSpanFull(),
-                        ]),
                     Infolists\Components\Tabs\Tab::make(__('Anexos'))
                         ->schema([
                             Infolists\Components\RepeatableEntry::make('attachments')
@@ -1500,6 +1488,25 @@ abstract class TransactionResource extends Resource
                             fn(Transaction $record): bool =>
                             $record->attachments?->count() > 0
                         ),
+                    Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                        ->schema([
+                            Infolists\Components\RepeatableEntry::make('logActivities')
+                                ->label('Interação(ões)')
+                                ->hiddenLabel()
+                                ->schema([
+                                    Infolists\Components\TextEntry::make('description')
+                                        ->hiddenLabel()
+                                        ->html()
+                                        ->columnSpan(3),
+                                    Infolists\Components\TextEntry::make('causer.name')
+                                        ->label(__('Por:')),
+                                    Infolists\Components\TextEntry::make('created_at')
+                                        ->label(__('Cadastro'))
+                                        ->dateTime('d/m/Y H:i'),
+                                ])
+                                ->columns(5)
+                                ->columnSpanFull(),
+                        ]),
                 ])
                 ->columns(3)
                 ->columnSpanFull(),

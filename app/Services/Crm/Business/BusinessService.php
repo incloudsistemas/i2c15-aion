@@ -4,6 +4,7 @@ namespace App\Services\Crm\Business;
 
 use App\Enums\Crm\Business\PriorityEnum;
 use App\Models\Crm\Business\Business;
+use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Funnels\Funnel;
 use App\Models\Crm\Funnels\FunnelStage;
 use App\Models\Crm\Funnels\FunnelSubstage;
@@ -324,6 +325,78 @@ class BusinessService extends BaseService
             fn(Builder $query, string $date): Builder =>
             $query->whereDate('business_at', '<=', $date)
         );
+    }
+
+    public function logCustomFieldChanges(Business $business): void
+    {
+        $user = auth()->user();
+
+        $changes = $business->getChanges();
+        $original = $business->getOriginal();
+
+        if (
+            isset($changes['funnel_id'])
+            || isset($changes['funnel_stage_id'])
+            || isset($changes['funnel_substage_id'])
+        ) {
+            $oldFunnel = Funnel::find($original['funnel_id'])->name;
+            $newFunnel = $business->funnel->name;
+
+            $oldStage = FunnelStage::find($original['funnel_stage_id'])->name;
+            $newStage = $business->stage->name;
+
+            $oldSubstage = FunnelSubstage::find($original['funnel_substage_id'])?->name;
+            $newSubstage = $business->substage?->name;
+
+            $displayStage = $newSubstage
+                ? "{$newStage} / {$newSubstage}"
+                : $newStage;
+
+            activity('business')
+                ->performedOn($business)
+                ->causedBy($user->id)
+                ->withProperties(
+                    [
+                        'field' => 'funnel',
+                        'old'   => $oldFunnel,
+                        'new'   => $newFunnel
+                    ],
+                    [
+                        'field' => 'stage',
+                        'old'   => $oldStage,
+                        'new'   => $newStage
+                    ],
+                    [
+                        'field' => 'substage',
+                        'old'   => $oldSubstage,
+                        'new'   => $newSubstage
+                    ]
+                )
+                ->log("Etapa do negócio atualizada para, funil: {$newFunnel} / Etapa: {$displayStage}, por {$user->name}");
+        }
+
+        // 4) Responsável (user_id)
+        // if (isset($changes['current_user_id'])) {
+        //     $old = optional($this->findUser($original['user_id']))->name ?? '—';
+        //     $new = optional($business->owner)->name                ?? '—';
+        //     activity('business')
+        //         ->performedOn($business)
+        //         ->causedBy($user->id)
+        //         ->withProperties(['field' => 'owner', 'old' => $old, 'new' => $new])
+        //         ->log("Negócio atribuído a “{$new}” (antes “{$old}”) por " . $user->name);
+        // }
+
+        // 5) Contato
+        if (isset($changes['contact_id'])) {
+            $old = Contact::find($original['contact_id'])->name;
+            $new = $business->contact->name;
+
+            activity('business')
+                ->performedOn($business)
+                ->causedBy($user->id)
+                ->withProperties(['field' => 'contact', 'old' => $old, 'new' => $new])
+                ->log("Novo contato {$new}, atribuído ao negócio por " . $user->name);
+        }
     }
 
     /**

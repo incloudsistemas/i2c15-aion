@@ -2,7 +2,7 @@
 
 namespace App\Models\Financial;
 
-use App\Casts\DateCast;
+use App\Casts\DateTimeCast;
 use App\Casts\FloatCast;
 use App\Enums\DefaultStatusEnum;
 use App\Enums\Financial\BankAccountRoleEnum;
@@ -17,12 +17,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class BankAccount extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia, SoftDeletes;
+
+    use LogsActivity {
+        activities as logActivities;
+    }
 
     protected $table = 'financial_bank_accounts';
 
@@ -43,7 +49,7 @@ class BankAccount extends Model implements HasMedia
         'role'         => BankAccountRoleEnum::class,
         'type_person'  => BankAccountTypePersonEnum::class,
         'is_main'      => 'boolean',
-        'balance_date' => DateCast::class,
+        'balance_date' => DateTimeCast::class,
         'balance'      => FloatCast::class,
         'status'       => DefaultStatusEnum::class,
     ];
@@ -51,6 +57,16 @@ class BankAccount extends Model implements HasMedia
     protected static function booted(): void
     {
         static::observe(BankAccountObserver::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        $logName = MorphMapByClass(model: self::class);
+
+        return LogOptions::defaults()
+            ->logOnly([])
+            ->dontSubmitEmptyLogs()
+            ->useLogName($logName);
     }
 
     /**

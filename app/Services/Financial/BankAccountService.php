@@ -4,6 +4,7 @@ namespace App\Services\Financial;
 
 use App\Models\Financial\BankAccount;
 use App\Services\BaseService;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,6 +60,26 @@ class BankAccountService extends BaseService
             );
     }
 
+    public function mutateRecordDataToEdit(BankAccount $bankAccount, array $data): array
+    {
+        $data['balance'] = $bankAccount->display_balance ?? '0,00';
+
+        return $data;
+    }
+
+    public function mutateFormDataToEdit(BankAccount $bankAccount, array $data): array
+    {
+        $bankAccount->load([
+            'bankInstitution:id,name',
+            'agency:id,name',
+        ]);
+
+        $data['_old_record'] = $bankAccount->replicate()
+            ->toArray();
+
+        return $data;
+    }
+
     public function beforeCreateAction(array $data): void
     {
         if (isset($data['is_main']) && $data['is_main']) {
@@ -67,11 +88,18 @@ class BankAccountService extends BaseService
         }
     }
 
-    public function mutateRecordDataToEdit(BankAccount $bankAccount, array $data): array
+    public function afterCreateAction(BankAccount $bankAccount, array $data): void
     {
-        $data['balance'] = $bankAccount->display_balance ?? '0,00';
+        $bankAccount->load([
+            'bankInstitution:id,name',
+            'agency:id,name',
+        ]);
 
-        return $data;
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logCreatedActivity(
+            currentRecord: $bankAccount,
+            description: "Nova conta bancária <b>{$bankAccount->name}</b> cadastrada por <b>" . auth()->user()->name . "</b>"
+        );
     }
 
     public function beforeEditAction(BankAccount $bankAccount, array $data): void
@@ -80,6 +108,21 @@ class BankAccountService extends BaseService
             $this->bankAccount->where('is_main', 1)
                 ->update(['is_main' => 0]);
         }
+    }
+
+    public function afterEditAction(BankAccount $bankAccount, array $data): void
+    {
+        $bankAccount->load([
+            'bankInstitution:id,name',
+            'agency:id,name',
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logUpdatedActivity(
+            currentRecord: $bankAccount,
+            oldRecord: $data['_old_record'],
+            description: "Conta bancária <b>{$bankAccount->name}</b> atualizada por <b>" . auth()->user()->name . "</b>"
+        );
     }
 
     /**

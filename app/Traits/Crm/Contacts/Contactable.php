@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -17,6 +19,20 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 trait Contactable
 {
     use HasFactory, Addressable, InteractsWithMedia, SoftDeletes;
+
+    use LogsActivity {
+        activities as logActivities;
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        $logName = MorphMapByClass(model: self::class);
+
+        return LogOptions::defaults()
+            ->logOnly([])
+            ->dontSubmitEmptyLogs()
+            ->useLogName($logName);
+    }
 
     public function registerMediaConversions(?Media $media = null): void
     {

@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -22,6 +24,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Agency extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia, Sluggable, SoftDeletes;
+
+    use LogsActivity {
+        activities as logActivities;
+    }
 
     protected $fillable = [
         'name',
@@ -35,6 +41,16 @@ class Agency extends Model implements HasMedia
         'status' => DefaultStatusEnum::class,
         'custom' => 'array',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        $logName = MorphMapByClass(model: self::class);
+
+        return LogOptions::defaults()
+            ->logOnly([])
+            ->dontSubmitEmptyLogs()
+            ->useLogName($logName);
+    }
 
     protected static function booted(): void
     {

@@ -582,7 +582,7 @@ class UserResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn (UserService $service, array $state): ?string =>
+                    fn(UserService $service, array $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -620,7 +620,7 @@ class UserResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn (UserService $service, array $state): ?string =>
+                    fn(UserService $service, array $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -783,6 +783,25 @@ class UserResource extends Resource
                                 fn(User $record): bool =>
                                 $record->attachments?->count() > 0
                             ),
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('logActivities')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('description')
+                                            ->hiddenLabel()
+                                            ->html()
+                                            ->columnSpan(3),
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),

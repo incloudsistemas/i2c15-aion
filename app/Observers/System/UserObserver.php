@@ -3,6 +3,7 @@
 namespace App\Observers\System;
 
 use App\Models\System\User;
+use App\Services\Polymorphics\ActivityLogService;
 
 class UserObserver
 {
@@ -24,8 +25,18 @@ class UserObserver
 
     public function deleted(User $user): void
     {
-        $deleted = '//deleted_' . md5(uniqid());
+        $user->load([
+            'roles:id,name',
+            'address'
+        ]);
 
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logDeletedActivity(
+            oldRecord: $user,
+            description: "Usuário <b>{$user->name}</b> excluído por <b>" . auth()->user()->name . "</b>"
+        );
+
+        $deleted = '//deleted_' . md5(uniqid());
         $user->email = $user->email . $deleted;
         $user->cpf = !empty($user->cpf) ? $user->cpf . $deleted : null;
 

@@ -10,6 +10,8 @@ use App\Models\Crm\Funnels\FunnelStage;
 use App\Services\Crm\Funnels\FunnelService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -129,7 +131,7 @@ class FunnelResource extends Resource
                                     ->columnSpanFull(),
                             ])
                             ->itemLabel(
-                                fn(array $state): ?string =>
+                                fn(mixed $state): ?string =>
                                 $state['name'] ?? null
                             )
                             ->addActionLabel(__('Adicionar sub-etapa'))
@@ -150,7 +152,7 @@ class FunnelResource extends Resource
                             ->columns(2),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['name'] ?? null
                     )
                     ->addActionLabel(__('Adicionar etapa'))
@@ -322,7 +324,7 @@ class FunnelResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -332,7 +334,7 @@ class FunnelResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -345,7 +347,7 @@ class FunnelResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn (FunnelService $service, array $state): ?string =>
+                    fn(FunnelService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -360,7 +362,7 @@ class FunnelResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -370,7 +372,7 @@ class FunnelResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -383,7 +385,7 @@ class FunnelResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn (FunnelService $service, array $state): ?string =>
+                    fn(FunnelService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -404,7 +406,7 @@ class FunnelResource extends Resource
                                 Infolists\Components\TextEntry::make('description')
                                     ->label(__('Descrição'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('order')
@@ -432,8 +434,8 @@ class FunnelResource extends Resource
                                         Infolists\Components\TextEntry::make('business_probability')
                                             ->label(__('Probabilidade de negócio'))
                                             ->visible(
-                                                fn(?string $state): bool =>
-                                                filled($state),
+                                                fn(mixed $state): bool =>
+                                                !empty($state),
                                             ),
                                         Infolists\Components\RepeatableEntry::make('substages')
                                             ->label(_('Sub-etapa(s)'))

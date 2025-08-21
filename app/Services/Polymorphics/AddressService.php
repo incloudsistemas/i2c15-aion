@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
 
 class AddressService extends BaseService
 {
-    public function __construct(protected Address $address)
+    public function __construct(protected Address $address, protected ActivityLogService $logService)
     {
         parent::__construct();
     }
@@ -97,6 +97,34 @@ class AddressService extends BaseService
             ->orderBy('created_at', 'desc');
     }
 
+    public function afterCreateAction(Model $ownerRecord, Address $address, array $data): void
+    {
+        $this->logService->logOwnerRecordRelationCreatedActivity(
+            ownerRecord: $ownerRecord,
+            currentRecord: $address,
+            description: $this->getActivityLogDescription(event: 'created')
+        );
+    }
+
+    public function mutateFormDataToEdit(Model $ownerRecord, Address $address, array $data): array
+    {
+        $data['_old_record'] = $address->replicate()
+            ->toArray();
+
+        return $data;
+    }
+
+    public function afterEditAction(Model $ownerRecord, Address $address, array $data): void
+    {
+        $this->logService->logOwnerRecordRelationUpdatedActivity(
+            ownerRecord: $ownerRecord,
+            currentRecord: $address,
+            oldRecord: $data['_old_record'],
+            description: $this->getActivityLogDescription(event: 'updated')
+        );
+    }
+
+
     /**
      * $action can be:
      * Filament\Tables\Actions\DeleteAction;
@@ -115,6 +143,15 @@ class AddressService extends BaseService
 
             $action->halt();
         }
+    }
+
+    public function afterDeleteAction(Model $ownerRecord, Address $address): void
+    {
+        $this->logService->logOwnerRecordRelationDeletedActivity(
+            ownerRecord: $ownerRecord,
+            oldRecord: $address,
+            description: $this->getActivityLogDescription(event: 'deleted')
+        );
     }
 
     public function deleteBulkAction(Collection $records, Model $ownerRecord): void
@@ -161,5 +198,27 @@ class AddressService extends BaseService
     protected function isMainAddressDeletable(Address $address, Model $ownerRecord): bool
     {
         return $address->is_main && $ownerRecord->addresses()->count() > 1;
+    }
+
+    public function afterDeleteBulkAction(Model $ownerRecord, Collection $records): void
+    {
+        foreach ($records as $address) {
+            $this->logService->logOwnerRecordRelationDeletedActivity(
+                ownerRecord: $ownerRecord,
+                oldRecord: $address,
+                description: $this->getActivityLogDescription(event: 'deleted')
+            );
+        }
+    }
+
+    protected function getActivityLogDescription(string $event): string
+    {
+        $user = auth()->user();
+
+        return match ($event) {
+            'updated' => "Endereço atualizado por <b>{$user->name}</b>",
+            'deleted' => "Endereço excluído por <b>{$user->name}</b>",
+            default   => "Novo endereço cadastrado por <b>{$user->name}</b>",
+        };
     }
 }

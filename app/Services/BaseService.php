@@ -6,6 +6,7 @@ use App\Enums\DefaultStatusEnum;
 use App\Models\System\Team;
 use App\Models\System\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 
 abstract class BaseService
@@ -162,17 +163,16 @@ abstract class BaseService
             return $query;
         }
 
-        return $query
-            ->when(
-                $data['updated_from'],
-                function (Builder $query, $date) use ($data) {
-                    if (empty($data['updated_until'])) {
-                        return $query->whereDate('updated_at', '=', $date);
-                    }
-
-                    return $query->whereDate('updated_at', '>=', $date);
+        return $query->when(
+            $data['updated_from'],
+            function (Builder $query, $date) use ($data) {
+                if (empty($data['updated_until'])) {
+                    return $query->whereDate('updated_at', '=', $date);
                 }
-            )
+
+                return $query->whereDate('updated_at', '>=', $date);
+            }
+        )
             ->when(
                 $data['updated_until'],
                 fn(Builder $query, $date): Builder =>

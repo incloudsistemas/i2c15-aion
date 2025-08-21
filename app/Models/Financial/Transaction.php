@@ -2,7 +2,7 @@
 
 namespace App\Models\Financial;
 
-use App\Casts\DateCast;
+use App\Casts\DateTimeCast;
 use App\Casts\FloatCast;
 use App\Enums\Financial\TransactionPaymentMethodEnum;
 use App\Enums\Financial\TransactionRepeatFrequencyEnum;
@@ -11,7 +11,6 @@ use App\Models\Crm\Business\Business;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\System\User;
 use App\Observers\Financial\TransactionObserver;
-use App\Traits\Polymorphics\SystemInteractable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -23,10 +22,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Transaction extends Model implements HasMedia
 {
-    use HasFactory, SystemInteractable, InteractsWithMedia, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
+
+    use LogsActivity {
+        activities as logActivities;
+    }
 
     protected $table = 'financial_transactions';
 
@@ -51,7 +56,7 @@ class Transaction extends Model implements HasMedia
         'final_price',
         'complement',
         'due_at',
-        'paid_at',
+        'paid_at'
     ];
 
     protected $casts = [
@@ -64,13 +69,23 @@ class Transaction extends Model implements HasMedia
         'discount'         => FloatCast::class,
         'taxes'            => FloatCast::class,
         'final_price'      => FloatCast::class,
-        'due_at'           => DateCast::class,
-        'paid_at'          => DateCast::class,
+        'due_at'           => DateTimeCast::class,
+        'paid_at'          => DateTimeCast::class
     ];
 
     protected static function booted(): void
     {
         static::observe(TransactionObserver::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        $logName = MorphMapByClass(model: self::class);
+
+        return LogOptions::defaults()
+            ->logOnly([])
+            ->dontSubmitEmptyLogs()
+            ->useLogName($logName);
     }
 
     /**

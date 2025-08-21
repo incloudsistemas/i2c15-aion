@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\System\UserResource\Pages;
 
 use App\Filament\Resources\System\UserResource;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
@@ -28,6 +29,8 @@ class CreateUser extends CreateRecord
     protected function afterCreate(): void
     {
         $this->createAddress();
+
+        $this->logActivity();
     }
 
     protected function createAddress(): void
@@ -36,5 +39,19 @@ class CreateUser extends CreateRecord
 
         $this->record->address()
             ->create($this->data['address']);
+    }
+
+    protected function logActivity(): void
+    {
+        $this->record->load([
+            'roles:id,name',
+            'address'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logCreatedActivity(
+            currentRecord: $this->record,
+            description: "Novo usuário <b>{$this->record->name}</b> cadastrado por <b>" . auth()->user()->name . "</b>"
+        );
     }
 }

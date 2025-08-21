@@ -15,7 +15,6 @@ use App\Models\Financial\Transaction;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Models\System\User;
 use App\Observers\Crm\Business\BusinessObserver;
-use App\Traits\Polymorphics\SystemInteractable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,10 +28,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Business extends Model implements HasMedia
 {
-    use HasFactory, SystemInteractable, InteractsWithMedia, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
+
+    use LogsActivity {
+        activities as logActivities;
+    }
 
     protected $table = 'crm_business';
 
@@ -50,7 +55,7 @@ class Business extends Model implements HasMedia
         'commission_price',
         'priority',
         'order',
-        'business_at',
+        'business_at'
     ];
 
     protected $casts = [
@@ -58,8 +63,18 @@ class Business extends Model implements HasMedia
         'commission_percentage' => FloatCast::class,
         'commission_price'      => FloatCast::class,
         'priority'              => PriorityEnum::class,
-        'business_at'           => DateTimeCast::class,
+        'business_at'           => DateTimeCast::class
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        $logName = MorphMapByClass(model: self::class);
+
+        return LogOptions::defaults()
+            ->logOnly([])
+            ->dontSubmitEmptyLogs()
+            ->useLogName($logName);
+    }
 
     protected static function booted(): void
     {

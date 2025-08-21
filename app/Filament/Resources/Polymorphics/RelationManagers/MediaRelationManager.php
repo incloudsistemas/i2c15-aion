@@ -104,9 +104,22 @@ class MediaRelationManager extends RelationManager
                                     ),
                             ]),
                         Tables\Actions\EditAction::make()
-                            ->before(
-                                fn(MediaService $service, Media $record, array $data) =>
-                                $service->beforeEditAction(ownerRecord: $this->ownerRecord, media: $record, data: $data)
+                            ->mutateFormDataUsing(
+                                fn(MediaService $service, Media $record, array $data): array =>
+                                $service->mutateFormDataToEdit(
+                                    ownerRecord: $this->ownerRecord,
+                                    media: $record,
+                                    data: $data
+                                ),
+                            )
+                            ->after(
+                                function (MediaService $service, Media $record, array $data) {
+                                    $service->afterEditAction(
+                                        ownerRecord: $this->ownerRecord,
+                                        media: $record,
+                                        data: $data
+                                    );
+                                }
                             ),
                         Tables\Actions\Action::make('download')
                             ->icon('heroicon-s-arrow-down-tray')
@@ -117,9 +130,9 @@ class MediaRelationManager extends RelationManager
                     ])
                         ->dropdown(false),
                     Tables\Actions\DeleteAction::make()
-                        ->before(
+                        ->after(
                             fn(MediaService $service, Media $record) =>
-                            $service->beforeDeleteAction(ownerRecord: $this->ownerRecord, media: $record)
+                            $service->afterDeleteAction(ownerRecord: $this->ownerRecord, media: $record)
                         ),
                 ])
                     ->label(__('Ações'))
@@ -131,9 +144,9 @@ class MediaRelationManager extends RelationManager
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                    ->before(
+                    ->after(
                         fn(MediaService $service, Collection $records) =>
-                        $service->beforeDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
+                        $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
                     ),
                 ]),
             ])

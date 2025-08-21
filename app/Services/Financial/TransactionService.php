@@ -5,6 +5,7 @@ namespace App\Services\Financial;
 use App\Models\Financial\Transaction;
 use App\Models\System\Agency;
 use App\Services\BaseService;
+use App\Services\Polymorphics\ActivityLogService;
 use Carbon\Carbon;
 use Closure;
 use Filament\Notifications\Notification;
@@ -60,7 +61,8 @@ class TransactionService extends BaseService
             }
 
             $installmentPrice = $quotient + ($key < $remainder ? 1 : 0);
-            $installmentPrice = number_format($installmentPrice / 100, 2, ',', '.');
+            $installmentPrice = ConvertIntToFloat(value: $installmentPrice);
+            $installmentPrice = number_format($installmentPrice, 2, ',', '.');
 
             $newItems[] = [
                 // 'index'           => $idx,
@@ -68,7 +70,8 @@ class TransactionService extends BaseService
                 'due_at'          => $dueDate->format('Y-m-d'),
                 'bank_account_id' => $bankAccount,
                 'payment_method'  => $paymentMethod,
-                'name'            => !empty($name) ? $name . " {$idx}/{$numInstallments}" : null,
+                'name'            => $name
+                // 'name'            => !empty($name) ? $name . " {$idx}/{$numInstallments}" : null
             ];
         }
 
@@ -97,8 +100,8 @@ class TransactionService extends BaseService
 
             for ($i = 0; $i < $numInstallments; $i++) {
                 $value = $quotient + ($i < $remainder ? 1 : 0);
-
-                $installments[$i]['price'] = number_format($value / 100, 2, ',', '.');
+                $value = ConvertIntToFloat(value: $value);
+                $installments[$i]['price'] = number_format($value, 2, ',', '.');
             }
 
             return $installments;
@@ -134,8 +137,8 @@ class TransactionService extends BaseService
                     : ($key === $numInstallments - 1);
 
                 $value = $isFinalOfThatBlock ? $diffInstallmentPrice : $baseInstallmentPrice;
-
-                $installments[$key]['price'] = number_format($value / 100, 2, ',', '.');
+                $value = ConvertIntToFloat(value: $value);
+                $installments[$key]['price'] = number_format($value, 2, ',', '.');
             }
         }
 
@@ -164,7 +167,7 @@ class TransactionService extends BaseService
 
         // (price + interest + fine) - (discount + taxes)
         $finalPrice = ($price + $interest + $fine) - $discount;
-        $finalPrice = round(floatval($finalPrice) / 100, precision: 2);
+        $finalPrice = ConvertIntToFloat(value: $finalPrice);
         $finalPrice = number_format($finalPrice, 2, ',', '.');
 
         return $finalPrice;
@@ -195,8 +198,8 @@ class TransactionService extends BaseService
 
             for ($key = 0; $key < $numInstallments; $key++) {
                 $value = $quotient + ($key < $remainder ? 1 : 0);
-
-                $installments[$key][$field] = number_format($value / 100, 2, ',', '.');
+                $value = ConvertIntToFloat(value: $value);
+                $installments[$key][$field] = number_format($value, 2, ',', '.');
             }
 
             return $installments;
@@ -240,13 +243,16 @@ class TransactionService extends BaseService
             ->sum();
 
         if ($price !== $sumInstallments) {
-            $price = number_format($price / 100, 2, ',', '.');
-            $sumInstallments = number_format($sumInstallments / 100, 2, ',', '.');
+            $price = ConvertIntToFloat(value: $price);
+            $price = number_format($price, 2, ',', '.');
 
-            $fail(__(
-                "O preço total (R$ {$price}), difere da soma das parcelas (R$ {$sumInstallments}).",
+            $sumInstallments = ConvertIntToFloat(value: $sumInstallments);
+            $sumInstallments = number_format($sumInstallments, 2, ',', '.');
+
+            $fail(
+                __("O preço total (R$ {$price}), difere da soma das parcelas (R$ {$sumInstallments})."),
                 ['attribute' => $attribute]
-            ));
+            );
         }
     }
 
@@ -282,7 +288,7 @@ class TransactionService extends BaseService
 
     public function tableFilterIndicateUsingByDefaultDate(array $data): ?string
     {
-        if (!$data['interval']) {
+        if (empty($data['interval'] ?? null)) {
             return null;
         }
 
@@ -319,7 +325,7 @@ class TransactionService extends BaseService
 
     public function tableFilterByFinalPrice(Builder $query, array $data): Builder
     {
-        if (!$data['min_final_price'] && !$data['max_final_price']) {
+        if (empty($data['min_final_price'] ?? null) && empty($data['max_final_price'] ?? null)) {
             return $query;
         }
 
@@ -377,7 +383,7 @@ class TransactionService extends BaseService
 
     public function tableFilterByAgencies(Builder $query, array $data): Builder
     {
-        if (empty($data['values'])) {
+        if (empty($data['values'] ?? null)) {
             return $query;
         }
 
@@ -390,7 +396,7 @@ class TransactionService extends BaseService
 
     public function tableFilterByStatuses(Builder $query, array $data): Builder
     {
-        if (empty($data['values'])) {
+        if (empty($data['values'] ?? null)) {
             return $query;
         }
 
@@ -422,7 +428,7 @@ class TransactionService extends BaseService
 
     public function tableFilterByPaidAt(Builder $query, array $data): Builder
     {
-        if (!$data['paid_from'] && !$data['paid_until']) {
+        if (empty($data['paid_from'] ?? null) && empty($data['paid_until'] ?? null)) {
             return $query;
         }
 
@@ -446,7 +452,7 @@ class TransactionService extends BaseService
 
     public function tableFilterByDueAt(Builder $query, array $data): Builder
     {
-        if (!$data['due_from'] && !$data['due_until']) {
+        if (empty($data['due_from'] ?? null) && empty($data['due_until'] ?? null)) {
             return $query;
         }
 
@@ -484,6 +490,17 @@ class TransactionService extends BaseService
 
     public function mutateFormDataToEdit(Transaction $transaction, array $data): array
     {
+        $transaction->load([
+            'owner:id,name',
+            'bankAccount:id,name',
+            'contact:id,name',
+            'business:id,name',
+            'categories:id,name'
+        ]);
+
+        $data['_old_record'] = $transaction->replicate()
+            ->toArray();
+
         $currentDueAt = Carbon::parse($transaction->getRawOriginal('due_at'));
         $newDueAt = Carbon::parse($data['due_at']);
 
@@ -501,6 +518,8 @@ class TransactionService extends BaseService
     {
         $this->syncCategories(transaction: $transaction, categories: $data['categories']);
         $this->createAttachments(transaction: $transaction, attachments: $data['attachments']);
+
+        $this->logActivity(transaction: $transaction, oldRecord: $data['_old_record']);
 
         $changeScope = isset($data['change_scope']) ? (int) $data['change_scope'] : null;
 
@@ -533,6 +552,17 @@ class TransactionService extends BaseService
         unset($data['due_at']);
 
         foreach ($transactions as $transaction) {
+            $transaction->load([
+                'owner:id,name',
+                'bankAccount:id,name',
+                'contact:id,name',
+                'business:id,name',
+                'categories:id,name'
+            ]);
+
+            $data['_old_record'] = $transaction->replicate()
+                ->toArray();
+
             if (array_filter($data['due_at_offset'])) {
                 $currentDueAt = Carbon::parse($transaction->getRawOriginal('due_at'));
 
@@ -544,6 +574,8 @@ class TransactionService extends BaseService
             $transaction->update($data);
 
             $this->syncCategories(transaction: $transaction, categories: $data['categories']);
+
+            $this->logActivity(transaction: $transaction, oldRecord: $data['_old_record']);
         }
     }
 
@@ -571,6 +603,147 @@ class TransactionService extends BaseService
                 ->usingName(basename($attachment))
                 ->toMediaCollection('attachments');
         }
+    }
+
+    protected function isTransactionCurrentCategoriesDifferent(Transaction $transaction): bool
+    {
+        $oldCategories = $this->oldTransaction->categories()
+            ->pluck('id')
+            ->sort()
+            ->values();
+
+        $currentCategories = $transaction->categories()
+            ->pluck('id')
+            ->sort()
+            ->values();
+
+        return $oldCategories->toJson() !== $currentCategories->toJson();
+    }
+
+    protected function logActivity(Transaction $transaction, array $oldRecord): void
+    {
+        // reload for nxn relationships
+        $transaction->load([
+            'owner:id,name',
+            'bankAccount:id,name',
+            'contact:id,name',
+            'business:id,name',
+            'categories:id,name'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logUpdatedActivity(
+            currentRecord: $transaction,
+            oldRecord: $oldRecord,
+            description: "Transação <b>{$transaction->name}</b> atualizada por <b>" . auth()->user()->name . "</b>",
+            except: ['bank_account_id', 'contact_id', 'paid_at']
+        );
+
+        // Custom activity log
+        $this->logContactChange(transaction: $transaction, oldRecord: $oldRecord);
+        $this->logBankAccountChange(transaction: $transaction, oldRecord: $oldRecord);
+        $this->logPaidAt(transaction: $transaction, oldRecord: $oldRecord);
+    }
+
+    protected function logContactChange(Transaction $transaction, array $oldRecord): void
+    {
+        $oldContact = $oldRecord['contact'];
+
+        if ($oldContact['id'] === $transaction->contact_id) {
+            return;
+        }
+
+        $attributes = [
+            'contact' => [
+                'id'   => $transaction->contact_id,
+                'name' => $transaction->contact->name,
+            ],
+        ];
+
+        $old = [
+            'contact' => [
+                'id'   => $oldContact['id'],
+                'name' => $oldContact['name'],
+            ],
+        ];
+
+        $description = "Novo contato <b>{$transaction->contact->name}</b> vinculado a transação <b>{$transaction->name}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomUpdatedActivity(
+            transaction: $transaction,
+            attributes: $attributes,
+            old: $old,
+            description: $description
+        );
+    }
+
+    protected function logBankAccountChange(Transaction $transaction, array $oldRecord): void
+    {
+        $oldBankAccount = $oldRecord['bank_account'];
+
+        if ($oldBankAccount['id'] === $transaction->bank_account_id) {
+            return;
+        }
+
+        $attributes = [
+            'bank_account' => [
+                'id'   => $transaction->bank_account_id,
+                'name' => $transaction->bankAccount->name,
+            ],
+        ];
+
+        $old = [
+            'bank_account' => [
+                'id'   => $oldBankAccount['id'],
+                'name' => $oldBankAccount['name'],
+            ],
+        ];
+
+        $description = "Nova conta bancária <b>{$transaction->contact->name}</b> vinculada a transação <b>{$transaction->name}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomUpdatedActivity(
+            transaction: $transaction,
+            attributes: $attributes,
+            old: $old,
+            description: $description
+        );
+    }
+
+    protected function logPaidAt(Transaction $transaction, array $oldRecord): void
+    {
+        if (!$transaction->paid_at || ($oldRecord['paid_at'] === $transaction->paid_at)) {
+            return;
+        }
+
+        $attributes = [
+            'paid_at' => $transaction->paid_at,
+        ];
+
+        $old = [
+            'paid_at' => $oldRecord['paid_at'],
+        ];
+
+        $description = "Transação paga em <b>{$transaction->paid_at}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomUpdatedActivity(
+            transaction: $transaction,
+            attributes: $attributes,
+            old: $old,
+            description: $description
+        );
+    }
+
+    protected function logCustomUpdatedActivity(Transaction $transaction, array $attributes, array $old, string $description): void
+    {
+        activity(MorphMapByClass(model: $transaction::class))
+            ->performedOn($transaction)
+            ->causedBy(auth()->user())
+            ->event('updated')
+            ->withProperties([
+                'attributes' => $attributes,
+                'old'        => $old,
+            ])
+            ->log($description);
     }
 
     public function afterDeleteAction(Transaction $transaction, array $data): void

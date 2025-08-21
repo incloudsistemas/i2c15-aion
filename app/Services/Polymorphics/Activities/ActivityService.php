@@ -2,15 +2,15 @@
 
 namespace App\Services\Polymorphics\Activities;
 
-use App\Models\Crm\Business\Business;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Services\BaseService;
+use App\Services\Polymorphics\ActivityLogService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
 class ActivityService extends BaseService
 {
-    public function __construct(protected Activity $activity)
+    public function __construct(protected Activity $activity, protected ActivityLogService $logService)
     {
         parent::__construct();
     }
@@ -76,35 +76,5 @@ class ActivityService extends BaseService
                 ->usingName(basename($attachment))
                 ->toMediaCollection('attachments');
         }
-    }
-
-    protected function logBusinessSystemInteractions(
-        Business $business,
-        Activity $activity,
-        string $description,
-        ?array $currentData = null,
-        ?array $oldData = null
-    ): void {
-        $interactionData = [
-            'activity_id' => $activity->id,
-        ];
-
-        if ($currentData) {
-            $interactionData['current_data'] = $currentData;
-        }
-
-        if ($oldData) {
-            $interactionData['old_data'] = $oldData;
-        }
-
-        $business->systemInteractions()
-            ->create([
-                'user_id'     => auth()->id(),
-                'description' => $description,
-                'data'        => $interactionData,
-            ]);
-
-        $business->updated_at = now();
-        $business->save();
     }
 }

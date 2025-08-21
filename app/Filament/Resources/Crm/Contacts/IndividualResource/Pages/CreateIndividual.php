@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Crm\Contacts\IndividualResource\Pages;
 
 use App\Filament\Resources\Crm\Contacts\IndividualResource;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -20,6 +21,8 @@ class CreateIndividual extends CreateRecord
         $this->createContact();
         $this->attachRoles();
         $this->attachLegalEntities();
+
+        $this->logActivity();
     }
 
     protected function createContact(): void
@@ -41,5 +44,23 @@ class CreateIndividual extends CreateRecord
     {
         $this->record->legalEntities()
             ->attach($this->data['legal_entities']);
+    }
+
+    protected function logActivity(): void
+    {
+        $this->record->load([
+            'contact',
+            'contact.owner:id,name',
+            'contact.roles:id,name',
+            'contact.source:id,name',
+            'addresses',
+            'legalEntities'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logCreatedActivity(
+            currentRecord: $this->record,
+            description: "Novo contato <b>{$this->record->contact->name}</b> cadastrado por <b>" . auth()->user()->name . "</b>"
+        );
     }
 }

@@ -7,10 +7,9 @@ use App\Models\Crm\Business\Business;
 use App\Models\Crm\Business\FunnelStage as BusinessFunnelStage;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Contacts\Role;
-use App\Models\Crm\Funnels\Funnel;
-use App\Models\Crm\Funnels\FunnelStage;
-use App\Models\Crm\Funnels\FunnelSubstage;
+use App\Models\System\User;
 use App\Services\Crm\Business\BusinessService;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -18,19 +17,13 @@ class EditBusiness extends EditRecord
 {
     protected static string $resource = BusinessResource::class;
 
-    protected ?int $currentUserId = null;
+    protected array $oldRecord;
 
-    protected ?int $currentContactId = null;
+    protected Contact $oldContact;
 
-    protected BusinessFunnelStage $currentBusinessFunnelStage;
+    protected User $oldUser;
 
-    protected Business $rawOriginalBusiness;
-
-    protected Funnel $funnel;
-
-    protected FunnelStage $funnelStage;
-
-    protected ?FunnelSubstage $funnelSubstage = null;
+    protected BusinessFunnelStage $oldBusinessFunnelStage;
 
     protected function getHeaderActions(): array
     {
@@ -68,34 +61,33 @@ class EditBusiness extends EditRecord
 
     protected function beforeSave(): void
     {
-        $this->currentUserId = $this->record->currentUser->id;
+        $this->record->load([
+            'owner:id,name',
+            'currentUserRelation:id,name',
+            'contact:id,name',
+            'funnel:id,name',
+            'stage:id,name',
+            'substage:id,name',
+            'currentBusinessFunnelStageRelation',
+            'source:id,name'
+        ]);
 
-        $this->currentContactId = $this->record->contact_id;
-
-        $this->currentBusinessFunnelStage = $this->record->currentBusinessFunnelStage;
-
-        $this->rawOriginalBusiness = $this->record;
-
-        $this->funnel = Funnel::findOrFail($this->data['funnel_id']);
-
-        $this->funnelStage = FunnelStage::findOrFail($this->data['funnel_stage_id']);
-
-        if ($this->data['funnel_substage_id']) {
-            $this->funnelSubstage = FunnelSubstage::findOrFail($this->data['funnel_substage_id']);
-        }
+        $this->oldRecord = $this->record->replicate()
+            ->toArray();
     }
 
     protected function afterSave(): void
     {
-        $this->syncBusinessOwner();
+        $this->syncBusinessCurrentUser();
         $this->updateBusinessFunnelStage();
-        $this->logBusinessSystemInteractions();
         $this->updateContactRolesToCustomer();
+
+        $this->logActivity();
     }
 
-    protected function syncBusinessOwner(): void
+    protected function syncBusinessCurrentUser(): void
     {
-        if ($this->isBusinessOwnerDifferent()) {
+        if ($this->isBusinessCurrentUserDifferent()) {
             $this->record->users()
                 ->attach($this->data['current_user_id'], ['business_at' => now()]);
         }
@@ -115,67 +107,175 @@ class EditBusiness extends EditRecord
         }
     }
 
-    protected function logBusinessSystemInteractions(): void
-    {
-        $user = auth()->user();
-
-        $descriptions = [];
-
-        if ($this->isBusinessContactDifferent()) {
-            $newContactName = $this->record->contact->name;
-            $descriptions[] = "Novo contato {$newContactName} atribuído ao negócio por: {$user->name}";
-        }
-
-        if ($this->isFunnelOrStagesDifferent()) {
-            $newStepDesc = "Etapa do negócio atualizada por: {$user->name} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
-
-            if ($this->funnelSubstage) {
-                $newStepDesc .= " / Sub-etapa: {$this->funnelSubstage->name}";
-            }
-
-            $descriptions[] = $newStepDesc;
-        }
-
-        if ($this->isBusinessOwnerDifferent()) {
-            $newOwnerName = $this->record->currentUser->name;
-            $descriptions[] = "Novo usuário {$newOwnerName} atribuído ao negócio por: {$user->name}";
-        }
-
-        foreach ($descriptions as $description) {
-            $this->record->systemInteractions()
-                ->create([
-                    'user_id'     => $user->id,
-                    'description' => $description,
-                ]);
-        }
-    }
-
     protected function updateContactRolesToCustomer(): void
     {
         $role = Role::find(3); // 3 - Cliente
+        $businessProbability = $this->record->currentSubstage?->business_probability ?? 0;
         $contact = $this->record->contact;
 
         // Business won
-        if ($role && $this->funnelStage->business_probability === 100 && !$contact->roles->contains($role->id)) {
+        if ($role && $businessProbability === 100 && !$contact->roles->contains($role->id)) {
             $contact->roles()
                 ->attach($role->id);
         }
     }
 
-    protected function isBusinessOwnerDifferent(): bool
+    protected function logActivity(): void
     {
-        return $this->currentUserId !== $this->data['current_user_id'];
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logUpdatedActivity(
+            currentRecord: $this->record,
+            oldRecord: $this->oldRecord,
+            description: "Negócio <b>{$this->record->name}</b> atualizado por <b>" . auth()->user()->name . "</b>",
+            except: ['funnel_id', 'funnel_stage_id', 'funnel_substage_id', 'contact_id']
+        );
+
+        // Custom activity log
+        $this->logContactChange();
+        $this->logFunnelStageChange();
+        $this->logCurrentUserAssignment();
+    }
+
+    protected function logContactChange(): void
+    {
+        if (!$this->isBusinessContactDifferent()) {
+            return;
+        }
+
+        $contact = Contact::find($this->data['contact_id']);
+        $attributes = [
+            'contact' => [
+                'id'   => $contact->id,
+                'name' => $contact->name,
+            ],
+        ];
+
+        $oldContact = $this->oldRecord['contact'];
+        $old = [
+            'contact' => [
+                'id'   => $oldContact['id'],
+                'name' => $oldContact['name'],
+            ],
+        ];
+
+        $description = "Novo contato <b>{$contact->name}</b> vinculado ao negócio <b>{$this->record->name}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomUpdatedActivity(attributes: $attributes, old: $old, description: $description);
+    }
+
+    protected function logFunnelStageChange(): void
+    {
+        if (!$this->isFunnelOrStagesDifferent()) {
+            return;
+        }
+
+        $funnel = $this->record->currentFunnel;
+        $stage = $this->record->currentStage;
+        $substage = $this->record->currentSubstage;
+
+        $attributes = [
+            'funnel'      => [
+                'id'   => $funnel->id,
+                'name' => $funnel->name
+            ],
+            'stage'       => [
+                'id'   => $stage->id,
+                'name' => $stage->name
+            ],
+            'substage'    => [
+                'id'   => $substage?->id,
+                'name' => $substage?->name
+            ],
+            'loss_reason' => $this->record->currentBusinessFunnelStage->loss_reason,
+            'business_at' => $this->record->currentBusinessFunnelStage->business_at,
+        ];
+
+        $oldBusinessFunnelStageId = $this->oldRecord['current_business_funnel_stage_relation']['id'];
+        $oldBusinessFunnelStage = BusinessFunnelStage::find($oldBusinessFunnelStageId);
+        $old = [
+            'funnel'      => [
+                'id'   => $oldBusinessFunnelStage->funnel->id,
+                'name' => $oldBusinessFunnelStage->funnel->name
+            ],
+            'stage'       => [
+                'id'   => $oldBusinessFunnelStage->stage->id,
+                'name' => $oldBusinessFunnelStage->stage->name
+            ],
+            'substage'    => [
+                'id'   => $oldBusinessFunnelStage->substage?->id,
+                'name' => $oldBusinessFunnelStage->substage?->name
+            ],
+            'loss_reason' => $oldBusinessFunnelStage->loss_reason,
+            'business_at' => $oldBusinessFunnelStage->business_at,
+        ];
+
+        $displayStage = $stage->name . ($substage ? " / {$substage->name}" : '');
+        $description = "Etapa do negócio atualizada para <b>{$funnel->name} / {$displayStage}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomUpdatedActivity(attributes: $attributes, old: $old, description: $description);
+    }
+
+    protected function logCurrentUserAssignment(): void
+    {
+        if (!$this->isBusinessCurrentUserDifferent()) {
+            return;
+        }
+
+        $currentUser = User::find($this->data['current_user_id']);
+        $attributes = [
+            'current_user_relation' => [
+                [
+                    'id'   => $currentUser->id,
+                    'name' => $currentUser->name,
+                ]
+            ],
+        ];
+
+        $oldCurrentUser = $this->oldRecord['current_user_relation'][0];
+        $old = [
+            'current_user_relation' => [
+                [
+                    'id'   => $oldCurrentUser['id'],
+                    'name' => $oldCurrentUser['name'],
+                ]
+            ],
+        ];
+
+        $description = "Negócio <b>{$this->record->name}</b> atribuído a <b>{$currentUser->name}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomUpdatedActivity(attributes: $attributes, old: $old, description: $description);
     }
 
     protected function isBusinessContactDifferent(): bool
     {
-        return $this->currentContactId !== $this->data['contact_id'];
+        $oldContact = $this->oldRecord['contact'];
+        return $oldContact['id'] !== $this->data['contact_id'];
+    }
+
+    protected function isBusinessCurrentUserDifferent(): bool
+    {
+        $oldCurrentUser = $this->oldRecord['current_user_relation'][0];
+        return $oldCurrentUser['id'] !== $this->data['current_user_id'];
     }
 
     protected function isFunnelOrStagesDifferent(): bool
     {
-        return $this->currentBusinessFunnelStage->funnel_id !== $this->data['funnel_id']
-            || $this->currentBusinessFunnelStage->funnel_stage_id !== $this->data['funnel_stage_id']
-            || $this->currentBusinessFunnelStage->funnel_substage_id !== $this->data['funnel_substage_id'];
+        $oldBusinessFunnelStage = $this->oldRecord['current_business_funnel_stage_relation'];
+        return $oldBusinessFunnelStage['funnel_id'] !== $this->data['funnel_id']
+            || $oldBusinessFunnelStage['funnel_stage_id'] !== $this->data['funnel_stage_id']
+            || $oldBusinessFunnelStage['funnel_substage_id'] !== $this->data['funnel_substage_id'];
+    }
+
+    protected function logCustomUpdatedActivity(array $attributes, array $old, string $description): void
+    {
+        activity(MorphMapByClass(model: $this->record::class))
+            ->performedOn($this->record)
+            ->causedBy(auth()->user())
+            ->event('updated')
+            ->withProperties([
+                'attributes' => $attributes,
+                'old'        => $old,
+            ])
+            ->log($description);
     }
 }

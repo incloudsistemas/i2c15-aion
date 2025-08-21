@@ -24,6 +24,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -144,7 +145,7 @@ class MeetingsRelationManager extends RelationManager
                         )
                         // ->default([auth()->user()->id])
                         ->multiple()
-                        ->selectablePlaceholder(false)
+                        // ->selectablePlaceholder(false)
                         ->native(false)
                         ->searchable()
                         ->preload()
@@ -234,10 +235,10 @@ class MeetingsRelationManager extends RelationManager
                             (int) $get('frequency') === 6
                         ),
                 ])
-                ->itemLabel(
-                    fn(array $state): ?string =>
-                    $state['frequency'] ?? null
-                )
+                // ->itemLabel(
+                //     fn(array $state): ?string =>
+                //     $state['frequency'] ?? null
+                // )
                 ->addActionLabel(__('Adicionar lembrete'))
                 ->defaultItems(0)
                 ->reorderable(false)
@@ -462,7 +463,15 @@ class MeetingsRelationManager extends RelationManager
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(
+                            fn(TaskService $service, Collection $records) =>
+                            $service->deleteBulkAction(records: $records, ownerRecord: $this->ownerRecord)
+                        )
+                        ->after(
+                            fn(TaskService $service, Collection $records) =>
+                            $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
+                        ),
                 ]),
             ])
             ->emptyStateActions([

@@ -11,6 +11,8 @@ use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Support;
 use Filament\Tables;
@@ -51,7 +53,7 @@ class RoleResource extends Resource
                     ->maxLength(255)
                     ->live(debounce: 500)
                     ->afterStateUpdated(
-                        fn(callable $set, ?string $state): ?string =>
+                        fn(mixed $state, Set $set): ?string =>
                         $set('slug', Str::slug($state))
                     )
                     ->columnSpanFull(),
@@ -174,7 +176,7 @@ class RoleResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -184,7 +186,7 @@ class RoleResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -197,7 +199,7 @@ class RoleResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn (RoleService $service, array $state): ?string =>
+                    fn(RoleService $service, array $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -212,7 +214,7 @@ class RoleResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -222,7 +224,7 @@ class RoleResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -235,7 +237,7 @@ class RoleResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn (RoleService $service, array $state): ?string =>
+                    fn(RoleService $service, array $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];

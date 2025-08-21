@@ -13,13 +13,6 @@ return new class extends Migration
     {
         Schema::create('activity_notes', function (Blueprint $table) {
             $table->id();
-            // // Atividade
-            // $table->foreignId('activity_id');
-            // $table->foreign('activity_id')
-            //     ->references('id')
-            //     ->on('activities')
-            //     ->onUpdate('cascade')
-            //     ->onDelete('cascade');
             // Tipo
             // 1 - 'Note//Observação', 2 - 'Call/Ligação'...
             $table->char('role', 1);

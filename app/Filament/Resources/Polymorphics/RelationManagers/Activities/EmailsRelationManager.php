@@ -21,6 +21,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -100,7 +101,7 @@ class EmailsRelationManager extends RelationManager
                         )
                         // ->default([auth()->user()->id])
                         ->multiple()
-                        ->selectablePlaceholder(false)
+                        // ->selectablePlaceholder(false)
                         ->native(false)
                         ->searchable()
                         ->preload()
@@ -269,11 +270,19 @@ class EmailsRelationManager extends RelationManager
                         Tables\Actions\EditAction::make()
                             ->mutateRecordDataUsing(
                                 fn(EmailService $service, Activity $record, array $data): array =>
-                                $service->mutateRecordDataToEdit(ownerRecord: $this->ownerRecord, activity: $record, data: $data)
+                                $service->mutateRecordDataToEdit(
+                                    ownerRecord: $this->ownerRecord,
+                                    activity: $record,
+                                    data: $data
+                                ),
                             )
                             ->mutateFormDataUsing(
                                 fn(EmailService $service, Activity $record, array $data): array =>
-                                $service->mutateFormDataToEdit(ownerRecord: $this->ownerRecord, activity: $record, data: $data)
+                                $service->mutateFormDataToEdit(
+                                    ownerRecord: $this->ownerRecord,
+                                    activity: $record,
+                                    data: $data
+                                ),
                             )
                             ->using(
                                 fn(EmailService $service, Activity $record, array $data): Model =>
@@ -299,7 +308,15 @@ class EmailsRelationManager extends RelationManager
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(
+                            fn(EmailService $service, Collection $records) =>
+                            $service->deleteBulkAction(records: $records, ownerRecord: $this->ownerRecord)
+                        )
+                        ->after(
+                            fn(EmailService $service, Collection $records) =>
+                            $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
+                        ),
                 ]),
             ])
             ->emptyStateActions([

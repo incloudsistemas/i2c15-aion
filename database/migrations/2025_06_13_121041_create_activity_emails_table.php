@@ -13,13 +13,6 @@ return new class extends Migration
     {
         Schema::create('activity_emails', function (Blueprint $table) {
             $table->id();
-            // // Atividade
-            // $table->foreignId('activity_id');
-            // $table->foreign('activity_id')
-            //     ->references('id')
-            //     ->on('activities')
-            //     ->onUpdate('cascade')
-            //     ->onDelete('cascade');
             // Remetente
             $table->string('sender_mail')->nullable();
             // Destinatário(s)

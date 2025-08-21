@@ -14,7 +14,6 @@ use App\Models\Crm\Contacts\Contact;
 use App\Models\Financial\Transaction;
 use App\Models\Polymorphics\Activities\Activity;
 use App\Models\Polymorphics\Address;
-use App\Models\Polymorphics\SystemInteraction;
 use App\Observers\System\UserObserver;
 use App\Services\System\RoleService;
 use Filament\Models\Contracts\FilamentUser;
@@ -34,10 +33,16 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable implements FilamentUser, HasMedia
 {
     use HasFactory, Notifiable, HasRoles, InteractsWithMedia, SoftDeletes;
+
+    use LogsActivity {
+        activities as logActivities;
+    }
 
     protected $fillable = [
         'name',
@@ -74,6 +79,16 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'status'            => UserStatusEnum::class,
     ];
 
+    public function getActivitylogOptions(): LogOptions
+    {
+        $logName = MorphMapByClass(model: self::class);
+
+        return LogOptions::defaults()
+            ->logOnly([])
+            ->dontSubmitEmptyLogs()
+            ->useLogName($logName);
+    }
+
     protected static function booted(): void
     {
         static::observe(UserObserver::class);
@@ -100,11 +115,6 @@ class User extends Authenticatable implements FilamentUser, HasMedia
      * RELATIONSHIPS.
      *
      */
-
-    public function ownSystemInteractions(): HasMany
-    {
-        return $this->hasMany(related: SystemInteraction::class, foreignKey: 'user_id');
-    }
 
     public function activities(): BelongsToMany
     {

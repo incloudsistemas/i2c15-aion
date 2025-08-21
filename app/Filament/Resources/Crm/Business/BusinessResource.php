@@ -11,8 +11,8 @@ use App\Filament\Resources\Polymorphics\RelationManagers\Activities\EmailsRelati
 use App\Filament\Resources\Polymorphics\RelationManagers\Activities\MeetingsRelationManager;
 use App\Filament\Resources\Polymorphics\RelationManagers\Activities\NotesRelationManager;
 use App\Filament\Resources\Polymorphics\RelationManagers\Activities\TasksRelationManager;
+use App\Filament\Resources\Polymorphics\RelationManagers\ActivityLogRelationManager;
 use App\Filament\Resources\Polymorphics\RelationManagers\MediaRelationManager;
-use App\Filament\Resources\Polymorphics\RelationManagers\SystemInteractionsRelationManager;
 use App\Models\Crm\Business\Business;
 use App\Models\Crm\Funnels\FunnelStage;
 use App\Models\Crm\Funnels\FunnelSubstage;
@@ -23,6 +23,8 @@ use App\Services\Crm\SourceService;
 use App\Services\System\UserService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -114,7 +116,7 @@ class BusinessResource extends Resource
                     ->required()
                     ->live()
                     ->afterStateUpdated(
-                        function (callable $set): void {
+                        function (Set $set): void {
                             $set('funnel_stage_id', null);
                             $set('funnel_substage_id', null);
                             $set('business_funnel_stage.loss_reason', null);
@@ -129,7 +131,7 @@ class BusinessResource extends Resource
                     ->relationship(
                         name: 'stage',
                         titleAttribute: 'name',
-                        modifyQueryUsing: fn(FunnelService $service, Builder $query, callable $get): Builder =>
+                        modifyQueryUsing: fn(FunnelService $service, Builder $query, Get $get): Builder =>
                         $service->getQueryByFunnelStagesFunnel(query: $query, funnelId: $get('funnel_id'))
                     )
                     // ->multiple()
@@ -140,7 +142,7 @@ class BusinessResource extends Resource
                     ->required()
                     ->live()
                     ->afterStateUpdated(
-                        function (callable $set): void {
+                        function (Set $set): void {
                             $set('funnel_substage_id', null);
                             $set('business_funnel_stage.loss_reason', null);
                         }
@@ -150,7 +152,7 @@ class BusinessResource extends Resource
                     ->relationship(
                         name: 'substage',
                         titleAttribute: 'name',
-                        modifyQueryUsing: fn(FunnelService $service, Builder $query, callable $get): Builder =>
+                        modifyQueryUsing: fn(FunnelService $service, Builder $query, Get $get): Builder =>
                         $service->getQueryByFunnelSubstagesFunnelStage(query: $query, funnelStageId: $get('funnel_stage_id')),
                     )
                     // ->multiple()
@@ -159,7 +161,7 @@ class BusinessResource extends Resource
                     ->searchable()
                     ->preload()
                     ->visible(
-                        fn(callable $get): bool =>
+                        fn(Get $get): bool =>
                         !empty($get('funnel_stage_id'))
                         && FunnelSubstage::where('funnel_stage_id', $get('funnel_stage_id'))->exists(),
                     ),
@@ -171,7 +173,7 @@ class BusinessResource extends Resource
                     ->required()
                     ->native(false)
                     ->visible(
-                        fn(callable $get): bool =>
+                        fn(Get $get): bool =>
                         !empty($get('funnel_stage_id'))
                         && FunnelStage::find($get('funnel_stage_id'))->business_probability === 0,
                     ),
@@ -184,7 +186,7 @@ class BusinessResource extends Resource
                     ->maxDate(now())
                     ->required()
                     ->visible(
-                        fn(callable $get): bool =>
+                        fn(Get $get): bool =>
                         !empty($get('funnel_stage_id'))
                         && in_array(FunnelStage::find($get('funnel_stage_id'))->business_probability, [0, 100]),
                     ),
@@ -199,7 +201,7 @@ class BusinessResource extends Resource
                     )
                     ->placeholder('0,00')
                     ->required(
-                        fn(callable $get): bool =>
+                        fn(Get $get): bool =>
                         !empty($get('funnel_stage_id'))
                         && FunnelStage::find($get('funnel_stage_id'))->business_probability === 100,
                     )
@@ -471,7 +473,7 @@ class BusinessResource extends Resource
                                 ->preload()
                                 ->live()
                                 ->afterStateUpdated(
-                                    function (callable $set): void {
+                                    function (Set $set): void {
                                         $set('funnel_stage_id', null);
                                         $set('funnel_substages', null);
                                     }
@@ -485,7 +487,7 @@ class BusinessResource extends Resource
                                 ->relationship(
                                     name: 'stage',
                                     titleAttribute: 'name',
-                                    modifyQueryUsing: fn(FunnelService $service, Builder $query, callable $get): Builder =>
+                                    modifyQueryUsing: fn(FunnelService $service, Builder $query, Get $get): Builder =>
                                     $service->getQueryByFunnelStagesFunnel(query: $query, funnelId: $get('funnel_id')),
                                 )
                                 // ->multiple()
@@ -495,7 +497,7 @@ class BusinessResource extends Resource
                                 ->preload()
                                 ->live()
                                 ->afterStateUpdated(
-                                    fn(callable $set) =>
+                                    fn(Set $set) =>
                                     $set('funnel_substages', null)
                                 ),
                             Forms\Components\Select::make('funnel_substages')
@@ -503,7 +505,7 @@ class BusinessResource extends Resource
                                 ->relationship(
                                     name: 'substage',
                                     titleAttribute: 'name',
-                                    modifyQueryUsing: fn(FunnelService $service, Builder $query, callable $get): Builder =>
+                                    modifyQueryUsing: fn(FunnelService $service, Builder $query, Get $get): Builder =>
                                     $service->getQueryByFunnelSubstagesFunnelStage(query: $query, funnelStageId: $get('funnel_stage_id')),
                                 )
                                 ->multiple()
@@ -518,7 +520,7 @@ class BusinessResource extends Resource
                     $service->tableFilterByCurrentBusinessFunnelStages(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(BusinessService $service, array $state): ?string =>
+                    fn(BusinessService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCurrentBusinessFunnelStages(data: $state),
                 )
                 ->columnSpanFull(),
@@ -549,7 +551,7 @@ class BusinessResource extends Resource
                                 ->maxValue(42949672.95)
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $set, callable $get, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('max_price')) && $state > $get('max_price')) {
                                             $set('max_price', $state);
                                         }
@@ -567,7 +569,7 @@ class BusinessResource extends Resource
                                 ->maxValue(42949672.95)
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $set, callable $get, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('min_price')) && $state < $get('min_price')) {
                                             $set('min_price', $state);
                                         }
@@ -580,7 +582,7 @@ class BusinessResource extends Resource
                     $service->tableFilterByPrice(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(BusinessService $service, array $state): ?string =>
+                    fn(BusinessService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByPrice(data: $state),
                 ),
             Tables\Filters\SelectFilter::make('priority')
@@ -621,7 +623,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. competência de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('business_until')) && $state > $get('business_until')) {
                                             $set('business_until', $state);
                                         }
@@ -631,7 +633,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. competência até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('business_from')) && $state < $get('business_from')) {
                                             $set('business_from', $state);
                                         }
@@ -644,7 +646,7 @@ class BusinessResource extends Resource
                     $service->tableFilterByBusinessAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(BusinessService $service, array $state): ?string =>
+                    fn(BusinessService $service, mixed $state): ?string =>
                     $service->indicateUsingByDates(from: $state['business_from'], until: $state['business_until'], display: 'Competência'),
                 ),
             Tables\Filters\Filter::make('closed_at')
@@ -659,7 +661,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. fechamento de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('closed_until')) && $state > $get('closed_until')) {
                                             $set('closed_until', $state);
                                         }
@@ -669,7 +671,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. fechamento até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('closed_from')) && $state < $get('closed_from')) {
                                             $set('closed_from', $state);
                                         }
@@ -682,7 +684,7 @@ class BusinessResource extends Resource
                     $service->tableFilterByClosedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(BusinessService $service, array $state): ?string =>
+                    fn(BusinessService $service, mixed $state): ?string =>
                     $service->indicateUsingByDates(from: $state['closed_from'], until: $state['closed_until'], display: 'Fechamento'),
                 ),
             Tables\Filters\Filter::make('created_at')
@@ -697,7 +699,7 @@ class BusinessResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -707,7 +709,7 @@ class BusinessResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -720,7 +722,7 @@ class BusinessResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(BusinessService $service, array $state): ?string =>
+                    fn(BusinessService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -735,7 +737,7 @@ class BusinessResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -745,7 +747,7 @@ class BusinessResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -758,7 +760,7 @@ class BusinessResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(BusinessService $service, array $state): ?string =>
+                    fn(BusinessService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -793,20 +795,20 @@ class BusinessResource extends Resource
                                 Infolists\Components\TextEntry::make('display_price')
                                     ->label(__('Valor (R$)'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('priority')
                                     ->label(__('Prioridade'))
                                     ->badge()
                                     ->visible(
-                                        fn(?PriorityEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !is_null($state),
                                     ),
                                 Infolists\Components\TextEntry::make('source.name')
                                     ->label(__('Origem'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('currentUserRelation.name')
@@ -821,7 +823,7 @@ class BusinessResource extends Resource
                                 Infolists\Components\TextEntry::make('description')
                                     ->label(__('Descrição'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
@@ -846,7 +848,7 @@ class BusinessResource extends Resource
                                     ->collection('avatar')
                                     ->conversion('thumb')
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.name')
@@ -855,43 +857,43 @@ class BusinessResource extends Resource
                                     ->label(__('Tipo(s)'))
                                     ->badge()
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.email')
                                     ->label(__('Email'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_additional_emails')
                                     ->label(__('Emails adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_main_phone_with_name')
                                     ->label(__('Telefone'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_additional_phones')
                                     ->label(__('Telefones adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.cpf')
                                     ->label(__('CPF'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.rg')
                                     ->label(__('RG'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.gender')
@@ -903,94 +905,76 @@ class BusinessResource extends Resource
                                 Infolists\Components\TextEntry::make('contact.contactable.display_birth_date')
                                     ->label(__('Dt. nascimento'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.occupation')
                                     ->label(__('Cargo'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.cnpj')
                                     ->label(__('CNPJ'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.municipal_registration')
                                     ->label(__('Inscrição municipal'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.state_registration')
                                     ->label(__('Inscrição estadual'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.url')
                                     ->label(__('URL do site'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.sector')
                                     ->label(__('Setor'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.monthly_income')
                                     ->label(__('Faturamento mensal'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.source.name')
                                     ->label(__('Origem'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.owner.name')
                                     ->label(__('Captador'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.complement')
                                     ->label(__('Sobre'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
                                 Infolists\Components\TextEntry::make('contact.contactable.main_address.display_full_address')
                                     ->label(__('Endereço'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
-                                    ->columnSpanFull(),
-                            ]),
-                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
-                            ->schema([
-                                Infolists\Components\RepeatableEntry::make('systemInteractions')
-                                    ->label('Interação(ões)')
-                                    ->hiddenLabel()
-                                    ->schema([
-                                        Infolists\Components\TextEntry::make('description')
-                                            ->hiddenLabel()
-                                            ->columnSpan(3),
-                                        Infolists\Components\TextEntry::make('owner.name')
-                                            ->label(__('Por:')),
-                                        Infolists\Components\TextEntry::make('created_at')
-                                            ->label(__('Cadastro'))
-                                            ->dateTime('d/m/Y H:i'),
-                                    ])
-                                    ->columns(5)
                                     ->columnSpanFull(),
                             ]),
                         Infolists\Components\Tabs\Tab::make(__('Anexos'))
@@ -1030,6 +1014,25 @@ class BusinessResource extends Resource
                                 fn(Business $record): bool =>
                                 $record->attachments?->count() > 0
                             ),
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('logActivities')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('description')
+                                            ->hiddenLabel()
+                                            ->html()
+                                            ->columnSpan(3),
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),
@@ -1040,7 +1043,7 @@ class BusinessResource extends Resource
     public static function getRelations(): array
     {
         return [
-            SystemInteractionsRelationManager::class,
+            ActivityLogRelationManager::class,
             NotesRelationManager::class,
             EmailsRelationManager::class,
             TasksRelationManager::class,

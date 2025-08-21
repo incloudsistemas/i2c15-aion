@@ -3,24 +3,16 @@
 namespace App\Filament\Resources\Crm\Business\BusinessResource\Pages;
 
 use App\Filament\Resources\Crm\Business\BusinessResource;
-use App\Models\Crm\Business\Activity as BusinessActivity;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Contacts\Role;
-use App\Models\Crm\Funnels\Funnel;
-use App\Models\Crm\Funnels\FunnelStage;
-use App\Models\Crm\Funnels\FunnelSubstage;
+use App\Models\System\User;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateBusiness extends CreateRecord
 {
     protected static string $resource = BusinessResource::class;
-
-    protected Funnel $funnel;
-
-    protected FunnelStage $funnelStage;
-
-    protected ?FunnelSubstage $funnelSubstage = null;
 
     protected function getRedirectUrl(): string
     {
@@ -37,25 +29,16 @@ class CreateBusiness extends CreateRecord
         return $data;
     }
 
-    protected function beforeCreate(): void
-    {
-        $this->funnel = Funnel::findOrFail($this->data['funnel_id']);
-        $this->funnelStage = FunnelStage::findOrFail($this->data['funnel_stage_id']);
-
-        if ($this->data['funnel_substage_id']) {
-            $this->funnelSubstage = FunnelSubstage::findOrFail($this->data['funnel_substage_id']);
-        }
-    }
-
     protected function afterCreate(): void
     {
-        $this->attachBusinessOwner();
+        $this->attachBusinessCurrentUser();
         $this->createBusinessFunnelStage();
-        $this->logBusinessSystemInteractions();
         $this->updateContactRolesToCustomer();
+
+        $this->logActivity();
     }
 
-    protected function attachBusinessOwner(): void
+    protected function attachBusinessCurrentUser(): void
     {
         $this->record->users()
             ->attach($this->data['current_user_id'], ['business_at' => $this->data['business_at']]);
@@ -73,43 +56,75 @@ class CreateBusiness extends CreateRecord
             ]);
     }
 
-    protected function logBusinessSystemInteractions(): void
-    {
-        $user = auth()->user();
-
-        $descriptions = [];
-
-        $baseDesc = "Novo negócio criado por: {$user->name} ⇒ {$this->funnel->name} / Etapa: {$this->funnelStage->name}";
-
-        if ($this->funnelSubstage) {
-            $baseDesc .= " / Sub-etapa: {$this->funnelSubstage->name}";
-        }
-
-        $descriptions[] = $baseDesc;
-
-        if ($user->id !== $this->data['current_user_id']) {
-            $newOwnerName = $this->record->currentUser->name;
-            $descriptions[] = "Novo negócio atribuído à {$newOwnerName} por: {$user->name}";
-        }
-
-        foreach ($descriptions as $description) {
-            $this->record->systemInteractions()
-                ->create([
-                    'user_id'     => $user->id,
-                    'description' => $description,
-                ]);
-        }
-    }
-
     protected function updateContactRolesToCustomer(): void
     {
         $role = Role::find(3); // 3 - Cliente
+        $businessProbability = $this->record->currentSubstage?->business_probability ?? 0;
         $contact = $this->record->contact;
 
         // Business won
-        if ($role && $this->funnelStage->business_probability === 100 && !$contact->roles->contains($role->id)) {
+        if ($role && $businessProbability === 100 && !$contact->roles->contains($role->id)) {
             $contact->roles()
                 ->attach($role->id);
         }
+    }
+
+    protected function logActivity(): void
+    {
+        $funnel = $this->record->currentFunnel;
+        $stage = $this->record->currentStage;
+        $substage = $this->record->currentSubstage;
+
+        $displayStage = $stage->name . ($substage ? " / {$substage->name}" : '');
+
+        $this->record->load([
+            'owner:id,name',
+            'currentUserRelation:id,name',
+            'contact:id,name',
+            'funnel:id,name',
+            'stage:id,name',
+            'substage:id,name',
+            'currentBusinessFunnelStageRelation',
+            'source:id,name'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logCreatedActivity(
+            currentRecord: $this->record,
+            description: "Novo negócio <b>{$this->record->name}</b> cadastrado em <b>{$funnel->name} / {$displayStage}</b> por <b>" . auth()->user()->name . "</b>"
+        );
+
+        // Custom activity log
+        $this->logCurrentUserAssignment();
+    }
+
+    protected function logCurrentUserAssignment(): void
+    {
+        if ($this->record->user_id === $this->data['current_user_id']) {
+            return;
+        }
+
+        $currentUser = User::find($this->data['current_user_id']);
+
+        $attributes = [
+            'current_user_id'      => $currentUser->id,
+            'display_current_user' => $currentUser->name,
+        ];
+
+        $description = "Negócio <b>{$this->record->name}</b> atribuído a <b>{$currentUser->name}</b> por <b>" . auth()->user()->name . "</b>";
+
+        $this->logCustomCreatedActivity(attributes: $attributes, description: $description);
+    }
+
+    protected function logCustomCreatedActivity(array $attributes, string $description): void
+    {
+        activity(MorphMapByClass(model: $this->record::class))
+            ->performedOn($this->record)
+            ->causedBy(auth()->user())
+            ->event('created')
+            ->withProperties([
+                'attributes' => $attributes,
+            ])
+            ->log($description);
     }
 }

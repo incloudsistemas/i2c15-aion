@@ -3,6 +3,7 @@
 namespace App\Observers\Crm\Contacts;
 
 use App\Models\Crm\Contacts\Individual;
+use App\Services\Polymorphics\ActivityLogService;
 
 class IndividualObserver
 {
@@ -24,6 +25,21 @@ class IndividualObserver
 
     public function deleted(Individual $individual): void
     {
+        $individual->load([
+            'contact',
+            'contact.owner:id,name',
+            'contact.roles:id,name',
+            'contact.source:id,name',
+            'addresses',
+            'legalEntities'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logDeletedActivity(
+            oldRecord: $individual,
+            description: "Contato <b>{$individual->contact->name}</b> excluído por <b>" . auth()->user()->name . "</b>"
+        );
+
         $individual->cpf = !empty($individual->cpf) ? $individual->cpf . '//deleted_' . md5(uniqid()) : null;
         $individual->save();
 

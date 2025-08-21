@@ -3,6 +3,7 @@
 namespace App\Observers\System;
 
 use App\Models\System\Agency;
+use App\Services\Polymorphics\ActivityLogService;
 
 class AgencyObserver
 {
@@ -27,6 +28,16 @@ class AgencyObserver
      */
     public function deleted(Agency $agency): void
     {
+        $agency->load([
+            'users:id,name',
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logDeletedActivity(
+            oldRecord: $agency,
+            description: "Agência <b>{$agency->name}</b> excluída por <b>" . auth()->user()->name . "</b>"
+        );
+
         $agency->slug = $agency->slug . '//deleted_' . md5(uniqid());
         $agency->save();
     }

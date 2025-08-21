@@ -20,6 +20,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Illuminate\Support\Str;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -258,7 +259,15 @@ class NotesRelationManager extends RelationManager
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(
+                            fn(NoteService $service, Collection $records) =>
+                            $service->deleteBulkAction(records: $records, ownerRecord: $this->ownerRecord)
+                        )
+                        ->after(
+                            fn(NoteService $service, Collection $records) =>
+                            $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
+                        ),
                 ]),
             ])
             ->emptyStateActions([

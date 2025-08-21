@@ -3,6 +3,7 @@
 namespace App\Observers\System;
 
 use App\Models\System\Team;
+use App\Services\Polymorphics\ActivityLogService;
 
 class TeamObserver
 {
@@ -27,6 +28,18 @@ class TeamObserver
      */
     public function deleted(Team $team): void
     {
+        $team->load([
+            'agency:id,name',
+            'coordinators:id,name',
+            'collaborators:id,name',
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logDeletedActivity(
+            oldRecord: $team,
+            description: "Equipe <b>{$team->name}</b> excluída por <b>" . auth()->user()->name . "</b>"
+        );
+
         $team->slug = $team->slug . '//deleted_' . md5(uniqid());
         $team->save();
     }

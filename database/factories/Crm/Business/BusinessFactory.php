@@ -4,7 +4,6 @@ namespace Database\Factories\Crm\Business;
 
 use App\Enums\Crm\Business\LossReasonEnum;
 use App\Models\Crm\Business\Business;
-use App\Models\Crm\Business\FunnelStage as BusinessFunnelStage;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Crm\Funnels\Funnel;
 use App\Models\Crm\Funnels\FunnelStage;
@@ -94,34 +93,6 @@ class BusinessFactory extends Factory
                 // Attach one existing User to the Business
                 $business->users()
                     ->attach($business->user_id);
-
-                // Create business activity
-                $superadm = User::find(1); // 1 - Superadmin
-                $superadmId = $superadm->id;
-                $superadmName = $superadm->name;
-
-                $descriptions = [];
-
-                $baseDesc = "Novo negócio criado por: {$superadmName} ⇒ {$business->current_funnel->name} / Etapa: {$business->current_stage->name}";
-
-                if ($business->current_substage) {
-                    $baseDesc .= " / Sub-etapa: {$business->current_substage->name}";
-                }
-
-                $descriptions[] = $baseDesc;
-
-                if ($superadmId !== $business->current_user->id) {
-                    $usrName = $business->current_user->name;
-                    $descriptions[] = "Novo negócio atribuído à {$usrName} por: {$superadmName}";
-                }
-
-                foreach ($descriptions as $description) {
-                    $business->systemInteractions()
-                        ->create([
-                            'user_id'     => $superadmId,
-                            'description' => $description,
-                        ]);
-                }
             }
         );
     }

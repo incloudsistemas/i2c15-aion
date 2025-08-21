@@ -5,12 +5,15 @@ namespace App\Filament\Resources\Crm\Contacts\LegalEntityResource\Pages;
 use App\Filament\Resources\Crm\Contacts\LegalEntityResource;
 use App\Models\Crm\Contacts\LegalEntity;
 use App\Services\Crm\Contacts\ContactService;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditLegalEntity extends EditRecord
 {
     protected static string $resource = LegalEntityResource::class;
+
+    protected array $oldRecord;
 
     protected function getHeaderActions(): array
     {
@@ -50,11 +53,28 @@ class EditLegalEntity extends EditRecord
         return $data;
     }
 
+    protected function beforeSave(): void
+    {
+        $this->record->load([
+            'contact',
+            'contact.owner:id,name',
+            'contact.roles:id,name',
+            'contact.source:id,name',
+            'addresses',
+            'individuals'
+        ]);
+
+        $this->oldRecord = $this->record->replicate()
+            ->toArray();
+    }
+
     protected function afterSave(): void
     {
         $this->updateContact();
         $this->syncRoles();
         $this->syncIndividuals();
+
+        $this->logActivity();
     }
 
     protected function updateContact(): void
@@ -75,5 +95,24 @@ class EditLegalEntity extends EditRecord
     {
         $this->record->individuals()
             ->sync($this->data['individuals']);
+    }
+
+    protected function logActivity(): void
+    {
+        $this->record->load([
+            'contact',
+            'contact.owner:id,name',
+            'contact.roles:id,name',
+            'contact.source:id,name',
+            'addresses',
+            'individuals'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logUpdatedActivity(
+            currentRecord: $this->record,
+            oldRecord: $this->oldRecord,
+            description: "Contato <b>{$this->record->contact->name}</b> atualizado por <b>" . auth()->user()->name . "</b>"
+        );
     }
 }

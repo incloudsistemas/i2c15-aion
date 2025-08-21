@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Financial\TransactionResource\Pages;
 
 use App\Filament\Resources\Financial\TransactionResource;
 use App\Models\Financial\Transaction;
+use App\Services\Polymorphics\ActivityLogService;
 use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
@@ -51,7 +52,10 @@ abstract class CreateTransaction extends CreateRecord
     protected function createInCashTransaction(): Transaction
     {
         $transaction = Transaction::create($this->data);
+
         $this->attachCategories(record: $transaction);
+
+        $this->logActivity(record: $transaction);
 
         return $transaction;
     }
@@ -71,14 +75,21 @@ abstract class CreateTransaction extends CreateRecord
 
             if ($key === 0) {
                 $firstTransaction = Transaction::create($installmentData);
-                $firstTransaction->update(['transaction_id' => $firstTransaction->id]);
+                $firstTransaction->disableLogging()
+                    ->update(['transaction_id' => $firstTransaction->id]);
+
                 $this->attachCategories(record: $firstTransaction);
+
+                $this->logActivity(record: $firstTransaction);
+
                 continue;
             }
 
             $installmentData['transaction_id'] = $firstTransaction->id;
             $transaction = Transaction::create($installmentData);
             $this->attachCategories(record: $transaction);
+
+            $this->logActivity(record: $transaction);
         }
 
         return $firstTransaction;
@@ -93,8 +104,12 @@ abstract class CreateTransaction extends CreateRecord
 
             if ($key === 0) {
                 $firstTransaction = Transaction::create($this->data);
-                $firstTransaction->update(['transaction_id' => $firstTransaction->id]);
+                $firstTransaction->disableLogging()
+                    ->update(['transaction_id' => $firstTransaction->id]);
+
                 $this->attachCategories(record: $firstTransaction);
+
+                $this->logActivity(record: $firstTransaction);
 
                 continue;
             }
@@ -108,6 +123,8 @@ abstract class CreateTransaction extends CreateRecord
             $this->data['transaction_id'] = $firstTransaction->id;
             $transaction = Transaction::create($this->data);
             $this->attachCategories(record: $transaction);
+
+            $this->logActivity(record: $transaction);
         }
 
         return $firstTransaction;
@@ -117,6 +134,23 @@ abstract class CreateTransaction extends CreateRecord
     {
         $record->categories()
             ->attach($this->data['categories']);
+    }
+
+    protected function logActivity(Transaction $record): void
+    {
+        $record->load([
+            'owner:id,name',
+            'bankAccount:id,name',
+            'contact:id,name',
+            'business:id,name',
+            'categories:id,name'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logCreatedActivity(
+            currentRecord: $record,
+            description: "Nova transação <b>{$record->name}</b> cadastrada por <b>" . auth()->user()->name . "</b>"
+        );
     }
 
     protected function calculateNextDates(int $frequency, Carbon $date, int $occurrence): string

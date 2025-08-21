@@ -3,6 +3,7 @@
 namespace App\Observers\Crm\Contacts;
 
 use App\Models\Crm\Contacts\LegalEntity;
+use App\Services\Polymorphics\ActivityLogService;
 
 class LegalEntityObserver
 {
@@ -24,6 +25,21 @@ class LegalEntityObserver
 
     public function deleted(LegalEntity $legalEntity): void
     {
+        $legalEntity->load([
+            'contact',
+            'contact.owner:id,name',
+            'contact.roles:id,name',
+            'contact.source:id,name',
+            'addresses',
+            'individuals'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logDeletedActivity(
+            oldRecord: $legalEntity,
+            description: "Contato <b>{$legalEntity->contact->name}</b> excluído por <b>" . auth()->user()->name . "</b>"
+        );
+
         $legalEntity->cnpj = !empty($legalEntity->cnpj) ? $legalEntity->cnpj . '//deleted_' . md5(uniqid()) : null;
         $legalEntity->save();
 

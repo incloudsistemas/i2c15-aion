@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Polymorphics\RelationManagers;
 
-use App\Models\Polymorphics\SystemInteraction;
-use App\Services\Polymorphics\SystemInteractionService;
+use Spatie\Activitylog\Models\Activity as ActivityLog;
+use App\Services\Polymorphics\ActivityLogService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -11,17 +11,14 @@ use Filament\Support;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Illuminate\Support\Str;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class SystemInteractionsRelationManager extends RelationManager
+class ActivityLogRelationManager extends RelationManager
 {
-    protected static string $relationship = 'systemInteractions';
+    protected static string $relationship = 'logActivities';
 
     protected static ?string $title = 'Interações';
 
@@ -39,47 +36,34 @@ class SystemInteractionsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('description')
-            // ->modifyQueryUsing(
-            //     fn(Builder $query): Builder =>
-            //     $query->where('activityable_type', MorphMapByClass(model: Note::class))
-            // )
             ->striped()
             ->columns(static::getTableColumns())
-            // ->reorderable('order_column')
-            ->defaultSort(column: 'created_at', direction: 'desc')
+            ->defaultSort(column: 'id', direction: 'desc')
             ->filters(static::getTableFilters(), layout: Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(2)
-            // ->headerActions([
-            //     Tables\Actions\CreateAction::make()
-            //         ->mutateFormDataUsing(
-            //             fn(NoteService $service, array $data): array =>
-            //             $service->mutateFormDataToCreate(ownerRecord: $this->ownerRecord, data: $data)
-            //         )
-            //         ->using(
-            //             fn(NoteService $service, array $data): Model =>
-            //             $service->createAction(data: $data, ownerRecord: $this->ownerRecord),
-            //         ),
-            // ])
-            // ->actions([
-            //     Tables\Actions\ActionGroup::make([
-            //         Tables\Actions\ActionGroup::make([
-            //             Tables\Actions\ViewAction::make(),
-            //             Tables\Actions\EditAction::make(),
-            //         ])
-            //             ->dropdown(false),
-            //         Tables\Actions\DeleteAction::make(),
-            //     ])
-            //         ->label(__('Ações'))
-            //         ->icon('heroicon-m-chevron-down')
-            //         ->size(Support\Enums\ActionSize::ExtraSmall)
-            //         ->color('gray')
-            //         ->button(),
-            // ])
-            // ->bulkActions([
-            //     Tables\Actions\BulkActionGroup::make([
-            //         Tables\Actions\DeleteBulkAction::make(),
-            //     ]),
-            // ])
+            ->headerActions([
+                //
+            ])
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ActionGroup::make([
+                        Tables\Actions\ViewAction::make(),
+                        // Tables\Actions\EditAction::make(),
+                    ])
+                        ->dropdown(false),
+                    // Tables\Actions\DeleteAction::make(),
+                ])
+                    ->label(__('Ações'))
+                    ->icon('heroicon-m-chevron-down')
+                    ->size(Support\Enums\ActionSize::ExtraSmall)
+                    ->color('gray')
+                    ->button(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    // Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
             ->emptyStateActions([
                 // Tables\Actions\CreateAction::make(),
             ]);
@@ -89,12 +73,14 @@ class SystemInteractionsRelationManager extends RelationManager
     {
         return [
             Tables\Columns\TextColumn::make('description')
-                ->label('')
-                ->searchable(),
-            Tables\Columns\TextColumn::make('owner.name')
-                ->label(__('Criado por'))
+                ->label(__('Descrição'))
                 ->searchable()
-                ->sortable(),
+                ->html(),
+            Tables\Columns\TextColumn::make('causer.name')
+                ->label(__('Responsável'))
+                ->sortable()
+                ->searchable()
+                ->toggleable(),
             Tables\Columns\TextColumn::make('created_at')
                 ->label(__('Cadastro'))
                 ->dateTime('d/m/Y H:i')
@@ -113,14 +99,6 @@ class SystemInteractionsRelationManager extends RelationManager
     protected function getTableFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('users')
-                ->label(__('Usuário(s)'))
-                ->relationship(
-                    name: 'owner',
-                    titleAttribute: 'name',
-                )
-                ->multiple()
-                ->preload(),
             Tables\Filters\Filter::make('created_at')
                 ->label(__('Cadastro'))
                 ->form([
@@ -152,7 +130,7 @@ class SystemInteractionsRelationManager extends RelationManager
                         ]),
                 ])
                 ->query(
-                    fn(SystemInteractionService $service, Builder $query, array $data): Builder =>
+                    fn(ActivityLogService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -186,7 +164,7 @@ class SystemInteractionsRelationManager extends RelationManager
                         ]),
                 ])
                 ->query(
-                    fn(SystemInteractionService $service, Builder $query, array $data): Builder =>
+                    fn(ActivityLogService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
                 ),
         ];
@@ -196,15 +174,42 @@ class SystemInteractionsRelationManager extends RelationManager
     {
         return $infolist
             ->schema([
-                Infolists\Components\Grid::make(['default' => 3])
-                    ->schema([
-                        Infolists\Components\TextEntry::make('created_at')
-                            ->label(__('Cadastro'))
-                            ->dateTime('d/m/Y H:i'),
-                        Infolists\Components\TextEntry::make('updated_at')
-                            ->label(__('Últ. atualização'))
-                            ->dateTime('d/m/Y H:i'),
-                    ]),
+                Infolists\Components\Tabs::make('Label')
+                    ->tabs([
+                        Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
+                            ->schema([
+                                Infolists\Components\TextEntry::make('description')
+                                    ->label(__('Descrição'))
+                                    ->html()
+                                    ->columnSpanFull(),
+                                Infolists\Components\Grid::make(['default' => 3])
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Responsável')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                        Infolists\Components\TextEntry::make('updated_at')
+                                            ->label(__('Últ. atualização'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ]),
+                            ]),
+                        Infolists\Components\Tabs\Tab::make(__('Dados e alterações'))
+                            ->schema([
+                                Infolists\Components\ViewEntry::make('data_audit')
+                                    ->state(fn(ActivityLog $record) => $record)
+                                    ->view('filament.infolists.polymorphics.activity-log-data-audit-wrapper')
+                                    ->columnSpanFull(),
+                            ])
+                            ->visible(
+                                fn(ActivityLog $record): bool =>
+                                filled($record->getExtraProperty('attributes'))
+                                || filled($record->getExtraProperty('old'))
+                            ),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
+
             ])
             ->columns(3);
     }

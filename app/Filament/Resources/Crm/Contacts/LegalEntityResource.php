@@ -18,6 +18,8 @@ use App\Services\System\UserService;
 use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -96,7 +98,7 @@ class LegalEntityResource extends Resource
                         function (ContactService $service, ?LegalEntity $record): Closure {
                             return function (
                                 string $attribute,
-                                string $state,
+                                mixed $state,
                                 Closure $fail
                             ) use ($service, $record): void {
                                 $contactableType = MorphMapByClass(model: LegalEntity::class);
@@ -136,7 +138,7 @@ class LegalEntityResource extends Resource
                             ->autocomplete(false),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['email'] ?? null,
                     )
                     ->addActionLabel(__('Adicionar email'))
@@ -167,7 +169,7 @@ class LegalEntityResource extends Resource
                                 function (ContactService $service, ?LegalEntity $record): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service, $record): void {
                                         $contactableType = MorphMapByClass(model: LegalEntity::class);
@@ -199,7 +201,7 @@ class LegalEntityResource extends Resource
                             ->autocomplete(false),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['number'] ?? null
                     )
                     ->addActionLabel(__('Adicionar telefone'))
@@ -301,7 +303,7 @@ class LegalEntityResource extends Resource
                         function (LegalEntityService $service, ?LegalEntity $record): Closure {
                             return function (
                                 string $attribute,
-                                string $state,
+                                mixed $state,
                                 Closure $fail
                             ) use ($service, $record): void {
                                 $service->validateCnpj(
@@ -588,7 +590,7 @@ class LegalEntityResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -598,7 +600,7 @@ class LegalEntityResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -611,7 +613,7 @@ class LegalEntityResource extends Resource
                     $service->tableFilterByContactCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(ContactService $service, array $state): ?string =>
+                    fn(ContactService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('contact.updated_at')
@@ -626,7 +628,7 @@ class LegalEntityResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -636,7 +638,7 @@ class LegalEntityResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -649,7 +651,7 @@ class LegalEntityResource extends Resource
                     $service->tableFilterByContactUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(ContactService $service, array $state): ?string =>
+                    fn(ContactService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -671,7 +673,7 @@ class LegalEntityResource extends Resource
                                     ->collection('avatar')
                                     ->conversion('thumb')
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.name')
@@ -684,91 +686,91 @@ class LegalEntityResource extends Resource
                                     ->label(__('Tipo(s)'))
                                     ->badge()
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.email')
                                     ->label(__('Email'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_additional_emails')
                                     ->label(__('Emails adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_main_phone_with_name')
                                     ->label(__('Telefone'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.display_additional_phones')
                                     ->label(__('Telefones adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 // Infolists\Components\TextEntry::make('trade_name')
                                 //     ->label(__('Nome fantasia'))
                                 //     ->visible(
-                                //         fn(?string $state): bool =>
+                                //         fn(mixed $state): bool =>
                                 //         !empty($state),
                                 //     ),
                                 Infolists\Components\TextEntry::make('cnpj')
                                     ->label(__('CNPJ'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('municipal_registration')
                                     ->label(__('Inscrição municipal'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('state_registration')
                                     ->label(__('Inscrição estadual'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('url')
                                     ->label(__('URL do site'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('sector')
                                     ->label(__('Setor'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('monthly_income')
                                     ->label(__('Faturamento mensal'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.source.name')
                                     ->label(__('Origem'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.owner.name')
                                     ->label(__('Captador'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.complement')
                                     ->label(__('Sobre'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
@@ -807,14 +809,14 @@ class LegalEntityResource extends Resource
                                         Infolists\Components\IconEntry::make('is_main')
                                             ->label(__('Principal'))
                                             ->icon(
-                                                fn(bool $state): string =>
+                                                fn(mixed $state): string =>
                                                 match ($state) {
                                                     false => 'heroicon-m-minus-small',
                                                     true  => 'heroicon-o-check-circle',
                                                 }
                                             )
                                             ->color(
-                                                fn(bool $state): string =>
+                                                fn(mixed $state): string =>
                                                 match ($state) {
                                                     true    => 'success',
                                                     default => 'gray',
@@ -865,6 +867,25 @@ class LegalEntityResource extends Resource
                                 fn(LegalEntity $record): bool =>
                                 $record->attachments?->count() > 0
                             ),
+                        Infolists\Components\Tabs\Tab::make(__('Histórico de Interações'))
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('logActivities')
+                                    ->label('Interação(ões)')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('description')
+                                            ->hiddenLabel()
+                                            ->html()
+                                            ->columnSpan(3),
+                                        Infolists\Components\TextEntry::make('causer.name')
+                                            ->label(__('Por:')),
+                                        Infolists\Components\TextEntry::make('created_at')
+                                            ->label(__('Cadastro'))
+                                            ->dateTime('d/m/Y H:i'),
+                                    ])
+                                    ->columns(5)
+                                    ->columnSpanFull(),
+                            ]),
                     ])
                     ->columns(3)
                     ->columnSpanFull(),

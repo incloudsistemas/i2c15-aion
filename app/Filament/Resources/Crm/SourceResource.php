@@ -11,6 +11,8 @@ use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Support;
 use Filament\Tables;
@@ -49,7 +51,7 @@ class SourceResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(
-                        fn(callable $set, ?string $state): ?string =>
+                        fn(mixed $state, Set $set): ?string =>
                         $set('slug', Str::slug($state))
                     )
                     ->columnSpanFull(),
@@ -172,7 +174,7 @@ class SourceResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -182,7 +184,7 @@ class SourceResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -192,7 +194,7 @@ class SourceResource extends Resource
                 ])
                 ->query(
                     fn(SourceService $service, Builder $query, array $data): Builder =>
-                    $service->tableFilterByCreatedAt(query: $query, data: $data)
+                    $service->tableFilterByCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
                     fn(SourceService $service, array $state): ?string =>
@@ -210,7 +212,7 @@ class SourceResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -220,7 +222,7 @@ class SourceResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (mixed $state, Set $set, Get $get): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -230,7 +232,7 @@ class SourceResource extends Resource
                 ])
                 ->query(
                     fn(SourceService $service, Builder $query, array $data): Builder =>
-                    $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                    $service->tableFilterByUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
                     fn(SourceService $service, array $state): ?string =>

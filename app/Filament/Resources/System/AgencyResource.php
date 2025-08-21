@@ -56,7 +56,7 @@ class AgencyResource extends Resource
                     ->required()
                     ->minLength(2)
                     ->maxLength(255)
-                    ->live(debounce: 500)
+                    ->live(onBlur: true)
                     ->afterStateUpdated(
                         fn(callable $set, ?string $state): ?string =>
                         $set('slug', Str::slug($state))

@@ -132,20 +132,50 @@ class AddressesRelationManager extends RelationManager
             ->filtersFormColumns(2)
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->before($this->setUniqueMainAddressCallback()),
+                    ->before($this->setUniqueMainAddressCallback())
+                    ->after(
+                        function (AddressService $service, Address $record, array $data) {
+                            $service->afterCreateAction(
+                                ownerRecord: $this->ownerRecord,
+                                address: $record,
+                                data: $data
+                            );
+                        }
+                    ),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ActionGroup::make([
                         Tables\Actions\ViewAction::make(),
                         Tables\Actions\EditAction::make()
-                            ->before($this->setUniqueMainAddressCallback()),
+                            ->mutateFormDataUsing(
+                                fn(AddressService $service, Address $record, array $data): array =>
+                                $service->mutateFormDataToEdit(
+                                    ownerRecord: $this->ownerRecord,
+                                    address: $record,
+                                    data: $data
+                                ),
+                            )
+                            ->before($this->setUniqueMainAddressCallback())
+                            ->after(
+                                function (AddressService $service, Address $record, array $data) {
+                                    $service->afterEditAction(
+                                        ownerRecord: $this->ownerRecord,
+                                        address: $record,
+                                        data: $data
+                                    );
+                                }
+                            ),
                     ])
                         ->dropdown(false),
                     Tables\Actions\DeleteAction::make()
                         ->before(
                             fn(AddressService $service, Tables\Actions\DeleteAction $action, Address $record) =>
                             $service->preventDeleteIf(action: $action, address: $record, ownerRecord: $this->ownerRecord),
+                        )
+                        ->after(
+                            fn(AddressService $service, Address $record) =>
+                            $service->afterDeleteAction(ownerRecord: $this->ownerRecord, address: $record)
                         ),
                 ])
                     ->label(__('Ações'))
@@ -161,6 +191,10 @@ class AddressesRelationManager extends RelationManager
                         ->action(
                             fn(AddressService $service, Collection $records) =>
                             $service->deleteBulkAction(records: $records, ownerRecord: $this->ownerRecord)
+                        )
+                        ->after(
+                            fn(AddressService $service, Collection $records) =>
+                            $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
                         ),
                 ]),
             ])

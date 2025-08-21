@@ -4,6 +4,7 @@ namespace App\Filament\Resources\System\UserResource\Pages;
 
 use App\Filament\Resources\System\UserResource;
 use App\Models\System\User;
+use App\Services\Polymorphics\ActivityLogService;
 use App\Services\System\UserService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,13 +14,15 @@ class EditUser extends EditRecord
 {
     protected static string $resource = UserResource::class;
 
+    protected array $oldRecord;
+
     protected function getHeaderActions(): array
     {
         return [
             Actions\DeleteAction::make()
                 ->before(
-                    fn (UserService $service, Actions\DeleteAction $action, User $record) =>
-                    $service->preventDeleteIf(action: $action, user: $record)
+                    fn(UserService $service, Actions\DeleteAction $action, User $record) =>
+                    $service->preventDeleteIf(action: $action, user: $record),
                 ),
         ];
     }
@@ -58,9 +61,22 @@ class EditUser extends EditRecord
         return $data;
     }
 
+    protected function beforeSave(): void
+    {
+        $this->record->load([
+            'roles:id,name',
+            'address'
+        ]);
+
+        $this->oldRecord = $this->record->replicate()
+            ->toArray();
+    }
+
     protected function afterSave(): void
     {
         $this->updateAddress();
+
+        $this->logActivity();
     }
 
     protected function updateAddress(): void
@@ -75,5 +91,20 @@ class EditUser extends EditRecord
                 ],
                 $this->data['address']
             );
+    }
+
+    protected function logActivity(): void
+    {
+        $this->record->load([
+            'roles:id,name',
+            'address'
+        ]);
+
+        $logService = app()->make(ActivityLogService::class);
+        $logService->logUpdatedActivity(
+            currentRecord: $this->record,
+            oldRecord: $this->oldRecord,
+            description: "Usuário <b>{$this->record->name}</b> atualizado por <b>" . auth()->user()->name . "</b>"
+        );
     }
 }

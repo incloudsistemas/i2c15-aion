@@ -56,12 +56,12 @@ class AppServiceProvider extends ServiceProvider
             // 'cms_post_categories'       => 'App\Models\Cms\PostCategory',
             // 'cms_post_sliders'          => 'App\Models\Cms\PostSlider',
 
-            'addresses'           => 'App\Models\Polymorphics\Address',
-            'activities'          => 'App\Models\Polymorphics\Activities\Activity',
-            'activity_notes'      => 'App\Models\Polymorphics\Activities\Note',
-            'activity_emails'     => 'App\Models\Polymorphics\Activities\Email',
-            'activity_tasks'      => 'App\Models\Polymorphics\Activities\Task',
-            'system_interactions' => 'App\Models\Polymorphics\SystemInteraction',
+            'addresses'       => 'App\Models\Polymorphics\Address',
+            'media'           => 'Spatie\MediaLibrary\MediaCollections\Models\Media',
+            'activities'      => 'App\Models\Polymorphics\Activities\Activity',
+            'activity_notes'  => 'App\Models\Polymorphics\Activities\Note',
+            'activity_emails' => 'App\Models\Polymorphics\Activities\Email',
+            'activity_tasks'  => 'App\Models\Polymorphics\Activities\Task',
         ]);
     }
 }
