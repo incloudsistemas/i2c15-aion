@@ -4,27 +4,8 @@ namespace App\Filament\Resources\Financial;
 
 use App\Filament\Resources\Financial\ReceivableTransactionResource\Pages;
 use App\Filament\Resources\Financial\ReceivableTransactionResource\RelationManagers;
-use App\Models\Financial\Transaction;
-use App\Services\Crm\Contacts\ContactService;
-use App\Services\Financial\BankAccountService;
-use App\Services\Financial\CategoryService;
-use App\Services\Financial\TransactionService;
-use App\Services\Polymorphics\MediaService;
-use Closure;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Support;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Illuminate\Support\Str;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class ReceivableTransactionResource extends TransactionResource
 {

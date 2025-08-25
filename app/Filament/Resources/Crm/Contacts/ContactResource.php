@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Crm\Contacts;
 
-use App\Enums\ProfileInfos\GenderEnum;
 use App\Enums\ProfileInfos\UserStatusEnum;
 use App\Filament\Resources\Crm\Contacts\ContactResource\Pages;
 use App\Filament\Resources\Crm\Contacts\ContactResource\RelationManagers;
@@ -282,7 +281,7 @@ class ContactResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -292,7 +291,7 @@ class ContactResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -320,7 +319,7 @@ class ContactResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -330,7 +329,7 @@ class ContactResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -428,7 +427,7 @@ class ContactResource extends Resource
                                 Infolists\Components\TextEntry::make('contactable.gender')
                                     ->label(__('Sexo'))
                                     ->visible(
-                                        fn(?GenderEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contactable.display_birth_date')

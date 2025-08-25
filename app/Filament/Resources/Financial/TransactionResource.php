@@ -262,10 +262,10 @@ abstract class TransactionResource extends Resource
                             ->afterStateUpdated(
                                 function (
                                     TransactionService $service,
-                                    mixed $state,
+                                    Forms\Components\TextInput $component,
                                     Set $set,
                                     Get $get,
-                                    Forms\Components\TextInput $component
+                                    mixed $state
                                 ) {
                                     $path = $component->getStatePath();
                                     preg_match('/installments\.(\d+)\.price$/', $path, $m);
@@ -285,7 +285,7 @@ abstract class TransactionResource extends Resource
                             ->label(__('Dt. vencimento'))
                             ->required()
                             ->minDate(
-                                function (Get $get, Forms\Components\DatePicker $component) {
+                                function (Forms\Components\DatePicker $component, Get $get) {
                                     $path = $component->getStatePath();
                                     preg_match('/installments\.(\d+)\.due_at$/', $path, $m);
                                     $index = isset($m[1]) ? (int) $m[1] : 0;
@@ -304,7 +304,7 @@ abstract class TransactionResource extends Resource
                         static::getNameFormField(),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['name'] ?? null
                     )
                     // ->addActionLabel(__('Adicionar parcela'))
@@ -378,8 +378,8 @@ abstract class TransactionResource extends Resource
                         ->prefix('R$')
                         ->mask(
                             Support\RawJs::make(<<<'JS'
-                                    $money($input, ',')
-                                JS)
+                                $money($input, ',')
+                            JS)
                         )
                         ->placeholder('0,00')
                         // ->required()
@@ -394,8 +394,8 @@ abstract class TransactionResource extends Resource
                         ->prefix('R$')
                         ->mask(
                             Support\RawJs::make(<<<'JS'
-                                    $money($input, ',')
-                                JS)
+                                $money($input, ',')
+                            JS)
                         )
                         ->placeholder('0,00')
                         // ->required()
@@ -410,8 +410,8 @@ abstract class TransactionResource extends Resource
                         ->prefix('R$')
                         ->mask(
                             Support\RawJs::make(<<<'JS'
-                                    $money($input, ',')
-                                JS)
+                                $money($input, ',')
+                            JS)
                         )
                         ->placeholder('0,00')
                         // ->required()
@@ -429,8 +429,8 @@ abstract class TransactionResource extends Resource
                 ->prefix('R$')
                 ->mask(
                     Support\RawJs::make(<<<'JS'
-                            $money($input, ',')
-                        JS)
+                        $money($input, ',')
+                    JS)
                 )
                 ->placeholder('0,00')
                 ->required()
@@ -533,7 +533,7 @@ abstract class TransactionResource extends Resource
                         ),
                 ])
                 ->itemLabel(
-                    fn(array $state): ?string =>
+                    fn(mixed $state): ?string =>
                     $state['file_name'] ?? null
                 )
                 // ->addActionLabel(__('Adicionar'))
@@ -863,7 +863,7 @@ abstract class TransactionResource extends Resource
                     $service->tableFilterByDefaultDate(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(TransactionService $service, array $state): ?string =>
+                    fn(TransactionService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByDefaultDate(data: $state),
                 )
                 ->columnSpanFull(),
@@ -925,7 +925,7 @@ abstract class TransactionResource extends Resource
                     $service->tableFilterByFinalPrice(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(TransactionService $service, array $state): ?string =>
+                    fn(TransactionService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByFinalPrice(data: $state),
                 ),
             Tables\Filters\SelectFilter::make('categories')
@@ -983,7 +983,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Vencimento de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('due_until')) && $state > $get('due_until')) {
                                             $set('due_until', $state);
                                         }
@@ -993,7 +993,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Vencimento até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('due_from')) && $state < $get('due_from')) {
                                             $set('due_from', $state);
                                         }
@@ -1006,7 +1006,7 @@ abstract class TransactionResource extends Resource
                     $service->tableFilterByDueAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(TransactionService $service, array $state): ?string =>
+                    fn(TransactionService $service, mixed $state): ?string =>
                     $service->indicateUsingByDates(from: $state['due_from'], until: $state['due_until'], display: 'Vencimento'),
                 ),
             Tables\Filters\Filter::make('paid_at')
@@ -1021,7 +1021,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Pago de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('paid_until')) && $state > $get('paid_until')) {
                                             $set('paid_until', $state);
                                         }
@@ -1031,7 +1031,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Pago até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('paid_from')) && $state < $get('paid_from')) {
                                             $set('paid_from', $state);
                                         }
@@ -1044,7 +1044,7 @@ abstract class TransactionResource extends Resource
                     $service->tableFilterByPaidAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(TransactionService $service, array $state): ?string =>
+                    fn(TransactionService $service, mixed $state): ?string =>
                     $service->indicateUsingByDates(from: $state['paid_from'], until: $state['paid_until'], display: 'Pago'),
                 ),
             Tables\Filters\Filter::make('created_at')
@@ -1059,7 +1059,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -1069,7 +1069,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -1093,7 +1093,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -1103,7 +1103,7 @@ abstract class TransactionResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -1556,7 +1556,7 @@ abstract class TransactionResource extends Resource
 
     protected static function updateInstallmentsDataBySpecificFieldCallback(string $field): Closure
     {
-        return function (TransactionService $service, mixed $state, Set $set, Get $get) use ($field) {
+        return function (TransactionService $service, Set $set, Get $get, mixed $state) use ($field) {
             // 2 - Parcelado
             if ((int) $get('repeat_payment') === 2) {
                 $installments = $service->updateInstallmentsDataBySpecificField(

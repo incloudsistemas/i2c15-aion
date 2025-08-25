@@ -11,6 +11,8 @@ use App\Services\System\AgencyService;
 use App\Services\System\UserService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -58,7 +60,7 @@ class AgencyResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(
-                        fn(callable $set, ?string $state): ?string =>
+                        fn(Set $set, mixed $state): ?string =>
                         $set('slug', Str::slug($state))
                     )
                     ->columnSpanFull(),
@@ -110,7 +112,7 @@ class AgencyResource extends Resource
                     ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/jpg', 'image/gif'])
                     ->maxSize(5120)
                     ->getUploadedFileNameForStorageUsing(
-                        fn(TemporaryUploadedFile $file, callable $get): string =>
+                        fn(TemporaryUploadedFile $file, Get $get): string =>
                         (string) str('-' . md5(uniqid()) . '-' . time() . '.' . $file->guessExtension())
                             ->prepend(Str::slug($get('name'))),
                     ),
@@ -282,7 +284,7 @@ class AgencyResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -292,7 +294,7 @@ class AgencyResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -305,7 +307,7 @@ class AgencyResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn (AgencyService $service, array $state): ?string =>
+                    fn(AgencyService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -320,7 +322,7 @@ class AgencyResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -330,7 +332,7 @@ class AgencyResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -343,7 +345,7 @@ class AgencyResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn (AgencyService $service, array $state): ?string =>
+                    fn(AgencyService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -366,7 +368,7 @@ class AgencyResource extends Resource
                                     ->conversion('thumb')
                                     ->circular()
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('name')
@@ -374,20 +376,20 @@ class AgencyResource extends Resource
                                 // Infolists\Components\TextEntry::make('users.name')
                                 //     ->label(__('Líder(es)'))
                                 //     ->visible(
-                                //         fn(?array $state): bool =>
+                                //         fn(mixed $state): bool =>
                                 //         !empty($state),
                                 //     ),
                                 Infolists\Components\TextEntry::make('teams.name')
                                     ->label(__('Equipe(s)'))
                                     ->badge()
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('complement')
                                     ->label(__('Sobre'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
@@ -418,7 +420,7 @@ class AgencyResource extends Resource
                                             ->circular()
                                             ->size(45)
                                             ->visible(
-                                                fn(?array $state): bool =>
+                                                fn(mixed $state): bool =>
                                                 !empty($state),
                                             ),
                                         Infolists\Components\Grid::make(['default' => 3])
@@ -434,7 +436,7 @@ class AgencyResource extends Resource
                                                 Infolists\Components\TextEntry::make('display_main_phone_with_name')
                                                     ->label(__('Telefone'))
                                                     ->visible(
-                                                        fn(?string $state): bool =>
+                                                        fn(mixed $state): bool =>
                                                         !empty($state),
                                                     ),
                                             ])

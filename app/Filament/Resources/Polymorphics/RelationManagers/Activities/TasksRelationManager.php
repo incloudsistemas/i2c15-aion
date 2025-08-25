@@ -12,6 +12,8 @@ use App\Services\Polymorphics\MediaService;
 use App\Services\System\UserService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support;
 use Filament\Tables;
@@ -158,7 +160,7 @@ class TasksRelationManager extends RelationManager
                         ->required()
                         ->live()
                         ->afterStateUpdated(
-                            function (callable $get, callable $set, ?string $state): void {
+                            function (Set $set, Get $get, mixed $state): void {
                                 if ((int) $state === 6) {
                                     $set('custom_date', $get('../../../task.start_date'));
                                     $set('custom_time', $get('../../../task.start_time'));
@@ -171,12 +173,12 @@ class TasksRelationManager extends RelationManager
                         ->format('d/m/Y')
                         ->minDate(now()->format('d/m/Y'))
                         ->maxDate(
-                            fn(callable $get): string =>
+                            fn(Get $get): string =>
                             $get('../../../task.start_date')
                         )
                         ->required()
                         ->visible(
-                            fn(callable $get): bool =>
+                            fn(Get $get): bool =>
                             (int) $get('frequency') === 6
                         ),
                     Forms\Components\TimePicker::make('custom_time')
@@ -184,12 +186,12 @@ class TasksRelationManager extends RelationManager
                         ->seconds(false)
                         ->required()
                         ->visible(
-                            fn(callable $get): bool =>
+                            fn(Get $get): bool =>
                             (int) $get('frequency') === 6
                         ),
                 ])
                 // ->itemLabel(
-                //     fn(array $state): ?string =>
+                //     fn(mixed $state): ?string =>
                 //     $state['frequency'] ?? null
                 // )
                 ->addActionLabel(__('Adicionar lembrete'))
@@ -231,7 +233,7 @@ class TasksRelationManager extends RelationManager
                         ->native(false)
                         ->required()
                         ->hidden(
-                            fn(callable $get): bool =>
+                            fn(Get $get): bool =>
                             !$get('repeat')
                         ),
                     Forms\Components\Select::make('task.repeat_frequency')
@@ -242,7 +244,7 @@ class TasksRelationManager extends RelationManager
                         ->native(false)
                         ->required()
                         ->hidden(
-                            fn(callable $get): bool =>
+                            fn(Get $get): bool =>
                             !$get('repeat')
                         ),
                 ])
@@ -269,7 +271,7 @@ class TasksRelationManager extends RelationManager
                 ->maxFiles(10)
                 // ->panelLayout('grid')
                 ->getUploadedFileNameForStorageUsing(
-                    fn(TemporaryUploadedFile $file, callable $get): string =>
+                    fn(TemporaryUploadedFile $file, Get $get): string =>
                     (string) str('-' . md5(uniqid()) . '-' . time() . '.' . $file->guessExtension())
                         ->prepend(Str::slug($get('subject'))),
                 )
@@ -323,7 +325,7 @@ class TasksRelationManager extends RelationManager
                         ),
                 ])
                 ->itemLabel(
-                    fn(array $state): ?string =>
+                    fn(mixed $state): ?string =>
                     $state['file_name'] ?? null
                 )
                 // ->addActionLabel(__('Adicionar'))
@@ -510,7 +512,7 @@ class TasksRelationManager extends RelationManager
                                 ->label(__('Data de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('start_until')) && $state > $get('start_until')) {
                                             $set('start_until', $state);
                                         }
@@ -520,7 +522,7 @@ class TasksRelationManager extends RelationManager
                                 ->label(__('Data até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('start_from')) && $state < $get('start_from')) {
                                             $set('start_from', $state);
                                         }
@@ -572,7 +574,7 @@ class TasksRelationManager extends RelationManager
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -582,7 +584,7 @@ class TasksRelationManager extends RelationManager
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -606,7 +608,7 @@ class TasksRelationManager extends RelationManager
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -616,7 +618,7 @@ class TasksRelationManager extends RelationManager
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -657,27 +659,27 @@ class TasksRelationManager extends RelationManager
                                 Infolists\Components\TextEntry::make('users.name')
                                     ->label(__('Usuário(s)'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('activityable.location')
                                     ->label(__('Local'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('activityable.priority')
                                     ->label(__('Prioridade'))
                                     ->badge()
                                     ->visible(
-                                        fn(?TaskPriorityEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('body')
                                     ->label(__('Conteúdo'))
                                     ->html()
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),

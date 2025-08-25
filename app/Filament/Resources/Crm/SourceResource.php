@@ -51,7 +51,7 @@ class SourceResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(
-                        fn(mixed $state, Set $set): ?string =>
+                        fn(Set $set, mixed $state): ?string =>
                         $set('slug', Str::slug($state))
                     )
                     ->columnSpanFull(),
@@ -174,7 +174,7 @@ class SourceResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -184,7 +184,7 @@ class SourceResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -197,7 +197,7 @@ class SourceResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(SourceService $service, array $state): ?string =>
+                    fn(SourceService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -212,7 +212,7 @@ class SourceResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -222,7 +222,7 @@ class SourceResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -235,7 +235,7 @@ class SourceResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(SourceService $service, array $state): ?string =>
+                    fn(SourceService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];

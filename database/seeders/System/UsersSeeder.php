@@ -33,17 +33,17 @@ class UsersSeeder extends Seeder
         $superadmin->assignRole('Superadministrador');
 
         // Delay of 1 seconds
-        sleep(1);
+        // sleep(1);
 
-        User::factory(30)
-            ->create()
-            ->each(function (User $user): void {
-                $role = Role::whereIn('id', [3, 7, 8]) // 3 - Admin, 7 - Financeiro, 8 - Marketing
-                    ->inRandomOrder()
-                    ->first();
+        // User::factory(30)
+        //     ->create()
+        //     ->each(function (User $user): void {
+        //         $role = Role::whereIn('id', [3, 7, 8]) // 3 - Admin, 7 - Financeiro, 8 - Marketing
+        //             ->inRandomOrder()
+        //             ->first();
 
-                $user->syncRoles([$role->name]);
-            });
+        //         $user->syncRoles([$role->name]);
+        //     });
     }
 
     protected function truncateTable()

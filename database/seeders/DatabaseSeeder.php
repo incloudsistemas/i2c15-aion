@@ -30,21 +30,21 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             UsersSeeder::class,
-            AgenciesSeeder::class,
-            TeamsSeeder::class,
+            // AgenciesSeeder::class,
+            // TeamsSeeder::class,
 
             ContactRolesSeeder::class,
             SourcesSeeder::class,
-            ContactsSeeder::class,
+            // ContactsSeeder::class,
             // FunnelsSeeder::class,
             // FunnelStagesSeeder::class,
             // FunnelSubstagesSeeder::class,
             DefaultFunnelsSeeder::class,
-            BusinessSeeder::class,
+            // BusinessSeeder::class,
 
             FinancialCategoriesSeeder::class,
             BankInstitutionsSeeder::class,
-            BankAccountsSeeder::class,
+            // BankAccountsSeeder::class,
         ]);
     }
 }

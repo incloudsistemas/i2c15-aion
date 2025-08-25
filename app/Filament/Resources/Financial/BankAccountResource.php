@@ -123,17 +123,15 @@ class BankAccountResource extends Resource
                     ->inline(false)
                     ->default(
                         fn(): bool =>
-                        BankAccount::all()
-                            ->count() === 0
+                        BankAccount::all()->count() === 0
                     )
                     ->accepted(
                         fn(): bool =>
-                        BankAccount::all()
-                            ->count() === 0
+                        BankAccount::all()->count() === 0
                     )
                     ->live()
                     ->afterStateUpdated(
-                        fn(mixed $state, Set $set): ?int =>
+                        fn(Set $set, mixed $state): ?int =>
                         $state ? $set('status', 1) : null,
                     )
                     ->disabled(
@@ -352,7 +350,7 @@ class BankAccountResource extends Resource
                                 ->label(__('Lançamento de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('balance_until')) && $state > $get('balance_until')) {
                                             $set('balance_until', $state);
                                         }
@@ -362,7 +360,7 @@ class BankAccountResource extends Resource
                                 ->label(__('Lançamento até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('balance_from')) && $state < $get('balance_from')) {
                                             $set('balance_from', $state);
                                         }
@@ -390,7 +388,7 @@ class BankAccountResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -400,7 +398,7 @@ class BankAccountResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -428,7 +426,7 @@ class BankAccountResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -438,7 +436,7 @@ class BankAccountResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }

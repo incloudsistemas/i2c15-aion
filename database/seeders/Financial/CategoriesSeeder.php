@@ -97,14 +97,14 @@ class CategoriesSeeder extends Seeder
             ]);
         }
 
-        // Create drawn categories for testing
-        Category::factory(10)
-            ->create();
+        // // Create drawn categories for testing
+        // Category::factory(10)
+        //     ->create();
 
-        // Create drawn subcategories for testing
-        Category::factory(15)
-            ->withParent()
-            ->create();
+        // // Create drawn subcategories for testing
+        // Category::factory(15)
+        //     ->withParent()
+        //     ->create();
     }
 
     protected function truncateTable()

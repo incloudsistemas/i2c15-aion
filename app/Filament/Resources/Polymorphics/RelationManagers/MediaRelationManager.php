@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Polymorphics\RelationManagers;
 use App\Services\Polymorphics\MediaService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support;
 use Filament\Tables;
@@ -53,7 +55,7 @@ class MediaRelationManager extends RelationManager
                     ->maxFiles(10)
                     // ->panelLayout('grid')
                     ->getUploadedFileNameForStorageUsing(
-                        fn(TemporaryUploadedFile $file, callable $get): string =>
+                        fn(TemporaryUploadedFile $file, Get $get): string =>
                         (string) str('-' . md5(uniqid()) . '-' . time() . '.' . $file->guessExtension())
                             ->prepend(Str::slug($get('name'))),
                     )
@@ -144,10 +146,10 @@ class MediaRelationManager extends RelationManager
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                    ->after(
-                        fn(MediaService $service, Collection $records) =>
-                        $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
-                    ),
+                        ->after(
+                            fn(MediaService $service, Collection $records) =>
+                            $service->afterDeleteBulkAction(ownerRecord: $this->ownerRecord, records: $records)
+                        ),
                 ]),
             ])
             ->emptyStateActions([
@@ -209,7 +211,7 @@ class MediaRelationManager extends RelationManager
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -219,7 +221,7 @@ class MediaRelationManager extends RelationManager
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -243,7 +245,7 @@ class MediaRelationManager extends RelationManager
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -253,7 +255,7 @@ class MediaRelationManager extends RelationManager
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }

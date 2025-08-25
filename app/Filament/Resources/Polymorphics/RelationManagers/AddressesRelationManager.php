@@ -8,6 +8,8 @@ use App\Services\Polymorphics\AddressService;
 use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -46,7 +48,7 @@ class AddressesRelationManager extends RelationManager
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(
-                        function (AddressService $service, ?string $state, ?string $old, callable $set): void {
+                        function (AddressService $service, Set $set, mixed $old, mixed $state): void {
                             if ($old === $state) {
                                 return;
                             }
@@ -227,14 +229,14 @@ class AddressesRelationManager extends RelationManager
             Tables\Columns\IconColumn::make('is_main')
                 ->label(__('Principal'))
                 ->icon(
-                    fn(bool $state): string =>
+                    fn(mixed $state): string =>
                     match ($state) {
                         false => 'heroicon-m-minus-small',
                         true  => 'heroicon-o-check-circle',
                     }
                 )
                 ->color(
-                    fn(bool $state): string =>
+                    fn(mixed $state): string =>
                     match ($state) {
                         true    => 'success',
                         default => 'gray',
@@ -271,7 +273,7 @@ class AddressesRelationManager extends RelationManager
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -281,7 +283,7 @@ class AddressesRelationManager extends RelationManager
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -305,7 +307,7 @@ class AddressesRelationManager extends RelationManager
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -315,7 +317,7 @@ class AddressesRelationManager extends RelationManager
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -338,7 +340,7 @@ class AddressesRelationManager extends RelationManager
                     ->label(__('Tipo de endereço'))
                     ->badge()
                     ->visible(
-                        fn(?string $state): bool =>
+                        fn(mixed $state): bool =>
                         !empty($state),
                     ),
                 Infolists\Components\TextEntry::make('zipcode')
@@ -352,44 +354,44 @@ class AddressesRelationManager extends RelationManager
                 Infolists\Components\TextEntry::make('district')
                     ->label(__('Bairro'))
                     ->visible(
-                        fn(?string $state): bool =>
+                        fn(mixed $state): bool =>
                         !empty($state),
                     ),
                 Infolists\Components\TextEntry::make('address_line')
                     ->label(__('Endereço'))
                     ->visible(
-                        fn(?string $state): bool =>
+                        fn(mixed $state): bool =>
                         !empty($state),
                     ),
                 Infolists\Components\TextEntry::make('number')
                     ->label(__('Número'))
                     ->visible(
-                        fn(?string $state): bool =>
+                        fn(mixed $state): bool =>
                         !empty($state),
                     ),
                 Infolists\Components\TextEntry::make('complement')
                     ->label(__('Complemento'))
                     ->visible(
-                        fn(?string $state): bool =>
+                        fn(mixed $state): bool =>
                         !empty($state),
                     ),
                 Infolists\Components\TextEntry::make('reference')
                     ->label(__('Ponto de referência'))
                     ->visible(
-                        fn(?string $state): bool =>
+                        fn(mixed $state): bool =>
                         !empty($state),
                     ),
                 Infolists\Components\IconEntry::make('is_main')
                     ->label(__('Principal'))
                     ->icon(
-                        fn(bool $state): string =>
+                        fn(mixed $state): string =>
                         match ($state) {
                             false => 'heroicon-m-minus-small',
                             true  => 'heroicon-o-check-circle',
                         }
                     )
                     ->color(
-                        fn(bool $state): string =>
+                        fn(mixed $state): string =>
                         match ($state) {
                             true    => 'success',
                             default => 'gray',

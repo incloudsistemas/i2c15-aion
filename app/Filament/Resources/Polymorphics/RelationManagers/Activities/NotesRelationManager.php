@@ -10,6 +10,8 @@ use App\Services\Polymorphics\Activities\NoteService;
 use App\Services\Polymorphics\MediaService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support;
 use Filament\Tables;
@@ -119,7 +121,7 @@ class NotesRelationManager extends RelationManager
                 ->maxFiles(10)
                 // ->panelLayout('grid')
                 ->getUploadedFileNameForStorageUsing(
-                    fn(TemporaryUploadedFile $file, callable $get): string =>
+                    fn(TemporaryUploadedFile $file, Get $get): string =>
                     (string) str('-' . md5(uniqid()) . '-' . time() . '.' . $file->guessExtension())
                         ->prepend(Str::slug($get('subject'))),
                 )
@@ -173,7 +175,7 @@ class NotesRelationManager extends RelationManager
                         ),
                 ])
                 ->itemLabel(
-                    fn(array $state): ?string =>
+                    fn(mixed $state): ?string =>
                     $state['file_name'] ?? null
                 )
                 // ->addActionLabel(__('Adicionar'))
@@ -346,7 +348,7 @@ class NotesRelationManager extends RelationManager
                                 ->label(__('Dt. Registro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('register_until')) && $state > $get('register_until')) {
                                             $set('register_until', $state);
                                         }
@@ -356,7 +358,7 @@ class NotesRelationManager extends RelationManager
                                 ->label(__('Dt. Registro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('register_from')) && $state < $get('register_from')) {
                                             $set('register_from', $state);
                                         }
@@ -380,7 +382,7 @@ class NotesRelationManager extends RelationManager
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -390,7 +392,7 @@ class NotesRelationManager extends RelationManager
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -414,7 +416,7 @@ class NotesRelationManager extends RelationManager
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -424,7 +426,7 @@ class NotesRelationManager extends RelationManager
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -456,7 +458,7 @@ class NotesRelationManager extends RelationManager
                                     ->label(__('Conteúdo'))
                                     ->html()
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),

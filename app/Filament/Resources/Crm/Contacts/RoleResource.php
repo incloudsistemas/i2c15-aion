@@ -199,7 +199,7 @@ class RoleResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(RoleService $service, array $state): ?string =>
+                    fn(RoleService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -237,7 +237,7 @@ class RoleResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data),
                 )
                 ->indicateUsing(
-                    fn(RoleService $service, array $state): ?string =>
+                    fn(RoleService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];

@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Crm\Business;
 
 use App\Enums\Crm\Business\LossReasonEnum;
 use App\Enums\Crm\Business\PriorityEnum;
-use App\Enums\ProfileInfos\GenderEnum;
 use App\Filament\Resources\Crm\Business\BusinessResource\Pages;
 use App\Filament\Resources\Crm\Business\BusinessResource\RelationManagers;
 use App\Filament\Resources\Polymorphics\RelationManagers\Activities\EmailsRelationManager;
@@ -623,7 +622,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. competência de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('business_until')) && $state > $get('business_until')) {
                                             $set('business_until', $state);
                                         }
@@ -633,7 +632,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. competência até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('business_from')) && $state < $get('business_from')) {
                                             $set('business_from', $state);
                                         }
@@ -661,7 +660,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. fechamento de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('closed_until')) && $state > $get('closed_until')) {
                                             $set('closed_until', $state);
                                         }
@@ -671,7 +670,7 @@ class BusinessResource extends Resource
                                 ->label(__('Dt. fechamento até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('closed_from')) && $state < $get('closed_from')) {
                                             $set('closed_from', $state);
                                         }
@@ -699,7 +698,7 @@ class BusinessResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -709,7 +708,7 @@ class BusinessResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -737,7 +736,7 @@ class BusinessResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -747,7 +746,7 @@ class BusinessResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (mixed $state, Set $set, Get $get): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -899,7 +898,7 @@ class BusinessResource extends Resource
                                 Infolists\Components\TextEntry::make('contact.contactable.gender')
                                     ->label(__('Sexo'))
                                     ->visible(
-                                        fn(?GenderEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('contact.contactable.display_birth_date')

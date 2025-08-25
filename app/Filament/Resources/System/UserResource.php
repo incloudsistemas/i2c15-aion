@@ -16,6 +16,8 @@ use App\Services\System\RoleService;
 use App\Services\System\UserService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -85,7 +87,7 @@ class UserResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(
-                        fn(callable $set, ?string $state): ?string =>
+                        fn(Set $set, mixed $state): ?string =>
                         $set('email_confirmation', $state)
                     )
                     ->columnSpanFull(),
@@ -111,7 +113,7 @@ class UserResource extends Resource
                             ->autocomplete(false),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['email'] ?? null
                     )
                     ->addActionLabel(__('Adicionar email'))
@@ -155,7 +157,7 @@ class UserResource extends Resource
                             ->autocomplete(false),
                     ])
                     ->itemLabel(
-                        fn(array $state): ?string =>
+                        fn(mixed $state): ?string =>
                         $state['number'] ?? null
                     )
                     ->addActionLabel(__('Adicionar telefone'))
@@ -305,7 +307,7 @@ class UserResource extends Resource
                     ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/jpg', 'image/gif'])
                     ->maxSize(5120)
                     ->getUploadedFileNameForStorageUsing(
-                        fn(TemporaryUploadedFile $file, callable $get): string =>
+                        fn(TemporaryUploadedFile $file, Get $get): string =>
                         (string) str('-' . md5(uniqid()) . '-' . time() . '.' . $file->guessExtension())
                             ->prepend(Str::slug($get('name'))),
                     )
@@ -328,7 +330,7 @@ class UserResource extends Resource
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(
-                                function (AddressService $service, ?string $state, ?string $old, callable $set): void {
+                                function (AddressService $service, Set $set, mixed $old, mixed $state): void {
                                     if ($old === $state) {
                                         return;
                                     }
@@ -559,7 +561,7 @@ class UserResource extends Resource
                                 ->label(__('Cadastro de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_until')) && $state > $get('created_until')) {
                                             $set('created_until', $state);
                                         }
@@ -569,7 +571,7 @@ class UserResource extends Resource
                                 ->label(__('Cadastro até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('created_from')) && $state < $get('created_from')) {
                                             $set('created_from', $state);
                                         }
@@ -582,7 +584,7 @@ class UserResource extends Resource
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(UserService $service, array $state): ?string =>
+                    fn(UserService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
@@ -597,7 +599,7 @@ class UserResource extends Resource
                                 ->label(__('Últ. atualização de'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_until')) && $state > $get('updated_until')) {
                                             $set('updated_until', $state);
                                         }
@@ -607,7 +609,7 @@ class UserResource extends Resource
                                 ->label(__('Últ. atualização até'))
                                 ->live(debounce: 500)
                                 ->afterStateUpdated(
-                                    function (callable $get, callable $set, ?string $state): void {
+                                    function (Set $set, Get $get, mixed $state): void {
                                         if (!empty($get('updated_from')) && $state < $get('updated_from')) {
                                             $set('updated_from', $state);
                                         }
@@ -620,7 +622,7 @@ class UserResource extends Resource
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
                 )
                 ->indicateUsing(
-                    fn(UserService $service, array $state): ?string =>
+                    fn(UserService $service, mixed $state): ?string =>
                     $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
@@ -643,7 +645,7 @@ class UserResource extends Resource
                                     ->conversion('thumb')
                                     ->circular()
                                     ->visible(
-                                        fn(?array $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('name')
@@ -656,80 +658,80 @@ class UserResource extends Resource
                                 Infolists\Components\TextEntry::make('display_additional_emails')
                                     ->label(__('Emails adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_main_phone_with_name')
                                     ->label(__('Telefone'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_additional_phones')
                                     ->label(__('Telefones adicionais'))
                                     ->visible(
-                                        fn(array|string|null $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('cpf')
                                     ->label(__('CPF'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('rg')
                                     ->label(__('RG'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('gender')
                                     ->label(__('Sexo'))
                                     ->visible(
-                                        fn(?GenderEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('display_birth_date')
                                     ->label(__('Dt. nascimento'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('marital_status')
                                     ->label(__('Estado civil'))
                                     ->visible(
-                                        fn(?MaritalStatusEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('educational_level')
                                     ->label(__('Escolaridade'))
                                     ->visible(
-                                        fn(?EducationalLevelEnum $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('nationality')
                                     ->label(__('Nacionalidade'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('citizenship')
                                     ->label(__('Naturalidade'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
                                 Infolists\Components\TextEntry::make('complement')
                                     ->label(__('Sobre'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
                                 Infolists\Components\TextEntry::make('address.display_full_address')
                                     ->label(__('Endereço'))
                                     ->visible(
-                                        fn(?string $state): bool =>
+                                        fn(mixed $state): bool =>
                                         !empty($state),
                                     )
                                     ->columnSpanFull(),
