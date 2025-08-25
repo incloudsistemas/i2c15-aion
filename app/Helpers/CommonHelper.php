@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Number;
 
 /**
  * Retrieves the model type from the morph map.
