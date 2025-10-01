@@ -4,7 +4,7 @@ namespace App\Transformers\Polymorphics\ActivityLog;
 
 use Spatie\Activitylog\Models\Activity as ActivityLog;
 
-class TransactionTransformer
+class BankAccountTransformer
 {
     public function transform(ActivityLog $activityLog): array
     {
