@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Cms\PagesSeeder;
+use Database\Seeders\Cms\PostCategoriesSeeder;
 use Database\Seeders\Crm\Business\BusinessSeeder;
 use Database\Seeders\Crm\Contacts\ContactsSeeder;
 use Database\Seeders\Crm\Contacts\RolesSeeder as ContactRolesSeeder;
@@ -45,6 +47,9 @@ class DatabaseSeeder extends Seeder
             FinancialCategoriesSeeder::class,
             BankInstitutionsSeeder::class,
             // BankAccountsSeeder::class,
+
+            // PostCategoriesSeeder::class,
+            PagesSeeder::class,
         ]);
     }
 }

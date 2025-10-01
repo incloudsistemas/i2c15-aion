@@ -8,6 +8,7 @@ use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Role extends Model
@@ -40,8 +41,10 @@ class Role extends Model
 
         return [
             'slug' => [
-                'source'   => 'name',
-                'onUpdate' => true,
+                'source'         => 'name',
+                'unique'         => true,
+                'onUpdate'       => true,
+                'includeTrashed' => true,
             ],
         ];
     }
@@ -51,7 +54,7 @@ class Role extends Model
      *
      */
 
-    public function contacts()
+    public function contacts(): BelongsToMany
     {
         return $this->belongsToMany(
             related: Contact::class,

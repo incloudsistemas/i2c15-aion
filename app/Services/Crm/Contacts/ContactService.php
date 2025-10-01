@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
+use Filament\Forms\Set;
 use Filament\Support;
 
 class ContactService extends BaseService
@@ -147,7 +148,7 @@ class ContactService extends BaseService
             ->orderBy('display_status', $direction);
     }
 
-    public function getQueryByElementsWhereHasContactsBasedOnAuthRoles(Builder $query): Builder
+    public function getQueryByElementsWhereHasContactsBasedOnAuthUserRoles(Builder $query): Builder
     {
         $user = auth()->user();
 
@@ -157,21 +158,9 @@ class ContactService extends BaseService
             return $query->whereHas('contacts');
         }
 
-        // if ($user->hasAnyRole(['Diretor', 'Gerente'])) {
-        //     $teamUserIds = $user->teams()
-        //         ->with('users:id')
-        //         ->get()
-        //         ->pluck('users.*.id')
-        //         ->flatten()
-        //         ->unique()
-        //         ->toArray();
+        $usersIds = $this->getOwnedUsersByAuthUserRolesAgenciesAndTeams(user: $user);
 
-        //     return $query->whereHas('contact', function (Builder $query) use ($teamUserIds): Builder {
-        //         return $query->whereIn('user_id', $teamUserIds);
-        //     });
-        // }
-
-        return $query->whereHas('contacts', fn(Builder $query): Builder => $query->where('user_id', $user->id));
+        return $query->whereHas('contacts', fn(Builder $query): Builder => $query->whereIn('user_id', $usersIds));
     }
 
     public function tableFilterByContactStatuses(Builder $query, array $data): Builder
@@ -187,47 +176,49 @@ class ContactService extends BaseService
 
     public function tableFilterByContactCreatedAt(Builder $query, array $data): Builder
     {
-        return $query
-            ->when(
+        if (!$data['created_from'] && !$data['created_until']) {
+            return $query;
+        }
+
+        return $query->whereHas('contact', function (Builder $query) use ($data): Builder {
+            return $query->when(
                 $data['created_from'],
                 fn(Builder $query, $date): Builder =>
-                $query->whereHas('contact', function (Builder $query) use ($date): Builder {
-                    return $query->whereDate('created_at', '>=', $date);
-                }),
+                $query->whereDate('created_at', '>=', $date),
             )
-            ->when(
-                $data['created_until'],
-                fn(Builder $query, $date): Builder =>
-                $query->whereHas('contact', function (Builder $query) use ($date): Builder {
-                    return $query->whereDate('created_at', '<=', $date);
-                }),
-            );
+                ->when(
+                    $data['created_until'],
+                    fn(Builder $query, $date): Builder =>
+                    $query->whereDate('created_at', '<=', $date),
+                );
+        });
     }
 
     public function tableFilterByContactUpdatedAt(Builder $query, array $data): Builder
     {
-        return $query
-            ->when(
+        if (!$data['updated_from'] && !$data['updated_until']) {
+            return $query;
+        }
+
+        return $query->whereHas('contact', function (Builder $query) use ($data): Builder {
+            return $query->when(
                 $data['updated_from'],
                 fn(Builder $query, $date): Builder =>
-                $query->whereHas('contact', function (Builder $query) use ($date): Builder {
-                    return $query->whereDate('updated_at', '>=', $date);
-                }),
+                $query->whereDate('updated_at', '>=', $date),
             )
-            ->when(
-                $data['updated_until'],
-                fn(Builder $query, $date): Builder =>
-                $query->whereHas('contact', function (Builder $query) use ($date): Builder {
-                    return $query->whereDate('updated_at', '<=', $date);
-                }),
-            );
+                ->when(
+                    $data['updated_until'],
+                    fn(Builder $query, $date): Builder =>
+                    $query->whereDate('updated_at', '<=', $date),
+                );
+        });
     }
 
     public function validateEmail(
         ?Contact $contact,
         string $contactableType,
         string $attribute,
-        string $state,
+        mixed $state,
         Closure $fail
     ): void {
         $userId = auth()->user()->id;
@@ -253,7 +244,7 @@ class ContactService extends BaseService
         ?Contact $contact,
         string $contactableType,
         string $attribute,
-        string $state,
+        mixed $state,
         Closure $fail
     ): void {
         $userId = auth()->user()->id;
@@ -390,7 +381,7 @@ class ContactService extends BaseService
                                 function (callable $get): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($get): void {
                                         $this->validateEmail(
@@ -418,7 +409,7 @@ class ContactService extends BaseService
                                 function (callable $get): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($get): void {
                                         $this->validatePhone(
@@ -439,7 +430,7 @@ class ContactService extends BaseService
                                 function (IndividualService $service): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service): void {
                                         $service->validateCpf(
@@ -463,7 +454,7 @@ class ContactService extends BaseService
                                 function (LegalEntityService $service): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service): void {
                                         $service->validateCnpj(
@@ -503,7 +494,7 @@ class ContactService extends BaseService
                     ]),
             ])
             ->action(
-                function (array $data, string|array|null $state, callable $set) use ($field, $multiple): void {
+                function (array $data, Set $set, mixed $state) use ($field, $multiple): void {
                     if ($data['contactable_type'] === $this->individualContactable) {
                         $contactable = $this->individual->create($data);
                     } elseif ($data['contactable_type'] === $this->legalEntityContactable) {

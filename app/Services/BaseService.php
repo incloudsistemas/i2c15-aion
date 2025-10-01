@@ -30,48 +30,6 @@ abstract class BaseService
         ];
     }
 
-    public function getOwnedUsersByAuthUserRolesAgenciesAndTeams(User $user): array
-    {
-        $usersIds = [$user->id];
-
-        // Logic for Coordinators and Leaders
-        if ($user->hasAnyRole(['Líder', 'Coordenador'])) {
-            // Get users from teams where the user is a coordinator
-            $teamUsersIds = $user->coordinatorTeams()
-                ->with('users:id')
-                ->get()
-                ->pluck('users.*.id')
-                ->flatten()
-                ->toArray();
-
-            $usersIds = array_merge($usersIds, $teamUsersIds);
-
-            // Additional logic for Leaders (access to all agency teams)
-            if ($user->hasRole('Líder')) {
-                $agenciesIds = $user->agencies()
-                    ->pluck('id')
-                    ->toArray();
-
-                $agTeamsIds = Team::whereIn('agency_id', $agenciesIds)
-                    ->pluck('id')
-                    ->toArray();
-
-                $agTeamsUsersIds = User::whereHas(
-                    'teams',
-                    fn(Builder $query): Builder => $query->whereIn('id', $agTeamsIds)
-                )
-                    ->pluck('id')
-                    ->toArray();
-
-                $usersIds = array_merge($usersIds, $agTeamsUsersIds);
-            }
-
-            $usersIds = array_unique($usersIds);
-        }
-
-        return $usersIds;
-    }
-
     public function tableSearchByStatus(
         Builder $query,
         string $search,
@@ -191,29 +149,79 @@ abstract class BaseService
 
     public function indicateUsingByDates(?string $from, ?string $until, string $display): ?string
     {
+        $from = $from !== null
+            ? ConvertEnToPtBrDate(date: $from)
+            : null;
+
+        $until = $until !== null
+            ? ConvertEnToPtBrDate(date: $until)
+            : null;
+
         if (blank($from) && blank($until)) {
             return null;
         }
 
-        $displayFrom  = !blank($from) ? ConvertEnToPtBrDate(date: $from) : null;
-        $displayUntil = !blank($until) ? ConvertEnToPtBrDate(date: $until) : null;
-
-        $parts = [];
-        if ($from && $until) {
+        if ($from !== null && $until !== null) {
             if ($from === $until) {
-                $parts[] = __("{$display} em: :date", ['date' => $displayFrom]);
-            } else {
-                $parts[] = __("{$display} entre: :from e :until", [
-                    'from'  => $displayFrom,
-                    'until' => $displayUntil
-                ]);
+                return __("{$display} de: :date", ['date' => $from]);
             }
-        } elseif ($from) {
-            $parts[] = __("{$display} de: :date", ['date' => $displayFrom]);
-        } elseif ($until) {
-            $parts[] = __("{$display} até: :date", ['date' => $displayUntil]);
+
+            return __("{$display} entre: :from e :until", [
+                'from'  => $from,
+                'until' => $until,
+            ]);
         }
 
-        return implode(' | ', $parts);
+        if ($from !== null) {
+            return __("{$display} de: :date", ['date' => $from]);
+        }
+
+        if ($until !== null) {
+            return __("{$display} de: :date", ['date' => $until]);
+        }
+
+        return null;
+    }
+
+    public function getOwnedUsersByAuthUserRolesAgenciesAndTeams(User $user): array
+    {
+        $usersIds = [$user->id];
+
+        // Logic for Coordinators and Leaders
+        if ($user->hasAnyRole(['Líder', 'Coordenador'])) {
+            // Get users from teams where the user is a coordinator
+            $teamUsersIds = $user->coordinatorTeams()
+                ->with('users:id')
+                ->get()
+                ->pluck('users.*.id')
+                ->flatten()
+                ->toArray();
+
+            $usersIds = array_merge($usersIds, $teamUsersIds);
+
+            // Additional logic for Leaders (access to all agency teams)
+            if ($user->hasRole('Líder')) {
+                $agenciesIds = $user->agencies()
+                    ->pluck('id')
+                    ->toArray();
+
+                $agTeamsIds = Team::whereIn('agency_id', $agenciesIds)
+                    ->pluck('id')
+                    ->toArray();
+
+                $agTeamsUsersIds = User::whereHas(
+                    'teams',
+                    fn(Builder $query): Builder => $query->whereIn('id', $agTeamsIds)
+                )
+                    ->pluck('id')
+                    ->toArray();
+
+                $usersIds = array_merge($usersIds, $agTeamsUsersIds);
+            }
+
+            $usersIds = array_unique($usersIds);
+        }
+
+        return $usersIds;
     }
 }

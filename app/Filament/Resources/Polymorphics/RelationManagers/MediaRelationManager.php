@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Polymorphics\RelationManagers;
 
+use App\Models\Cms\Page;
 use App\Services\Polymorphics\MediaService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -160,6 +161,11 @@ class MediaRelationManager extends RelationManager
     protected function getTableColumns(): array
     {
         return [
+            Tables\Columns\TextColumn::make('id')
+                ->label(__('#ID'))
+                ->searchable()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
             Tables\Columns\TextColumn::make('name')
                 ->label(__('Nome'))
                 ->searchable()
@@ -232,6 +238,10 @@ class MediaRelationManager extends RelationManager
                 ->query(
                     fn(MediaService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByCreatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(MediaService $service, mixed $state): ?string =>
+                    $service->tableFilterIndicateUsingByCreatedAt(data: $state),
                 ),
             Tables\Filters\Filter::make('updated_at')
                 ->label(__('Últ. atualização'))
@@ -266,6 +276,10 @@ class MediaRelationManager extends RelationManager
                 ->query(
                     fn(MediaService $service, Builder $query, array $data): Builder =>
                     $service->tableFilterByUpdatedAt(query: $query, data: $data)
+                )
+                ->indicateUsing(
+                    fn(MediaService $service, mixed $state): ?string =>
+                    $service->tableFilterIndicateUsingByUpdatedAt(data: $state),
                 ),
         ];
     }
@@ -274,6 +288,8 @@ class MediaRelationManager extends RelationManager
     {
         return $infolist
             ->schema([
+                Infolists\Components\TextEntry::make('id')
+                    ->label(__('#ID')),
                 Infolists\Components\TextEntry::make('name')
                     ->label(__('Nome'))
                     ->helperText(
@@ -305,7 +321,9 @@ class MediaRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        // $ownerRecord->getTable();
+        if (MorphMapByClass(model: $ownerRecord::class) === MorphMapByClass(model: Page::class)) {
+            return !in_array('attachments', $ownerRecord->settings) ? false : true;
+        }
 
         return true;
     }

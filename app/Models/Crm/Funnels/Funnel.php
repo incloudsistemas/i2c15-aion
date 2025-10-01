@@ -45,6 +45,7 @@ class Funnel extends Model
         return [
             'slug' => [
                 'source'   => 'name',
+                'unique'   => true,
                 'onUpdate' => true,
             ],
         ];

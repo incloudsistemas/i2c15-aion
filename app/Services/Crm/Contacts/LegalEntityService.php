@@ -9,6 +9,7 @@ use App\Services\Crm\SourceService;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms;
+use Filament\Forms\Set;
 use Filament\Support;
 
 class LegalEntityService extends BaseService
@@ -18,7 +19,7 @@ class LegalEntityService extends BaseService
         parent::__construct();
     }
 
-    public function validateCnpj(?LegalEntity $legalEntity, string $attribute, string $state, Closure $fail): void
+    public function validateCnpj(?LegalEntity $legalEntity, string $attribute, mixed $state, Closure $fail): void
     {
         $userId = auth()->user()->id;
 
@@ -134,7 +135,7 @@ class LegalEntityService extends BaseService
                                 function (ContactService $service): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service): void {
                                         $contactableType = MorphMapByClass(model: LegalEntity::class);
@@ -164,7 +165,7 @@ class LegalEntityService extends BaseService
                                 function (ContactService $service): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service): void {
                                         $contactableType = MorphMapByClass(model: LegalEntity::class);
@@ -187,7 +188,7 @@ class LegalEntityService extends BaseService
                                 function (): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ): void {
                                         $this->validateCnpj(
@@ -223,11 +224,7 @@ class LegalEntityService extends BaseService
                     ]),
             ])
             ->action(
-                function (
-                    array $data,
-                    string|array|null $state,
-                    callable $set
-                ) use ($field, $multiple, $returnKey): void {
+                function (array $data, Set $set, mixed $state) use ($field, $multiple, $returnKey): void {
                     $legalEntity = $this->legalEntity->create($data);
 
                     $data['contact']['user_id'] = auth()->user()->id;

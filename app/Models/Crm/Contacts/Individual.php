@@ -59,9 +59,11 @@ class Individual extends Model implements HasMedia
 
     protected function displayBirthDate(): Attribute
     {
-        return Attribute::get(
-            fn(): ?string =>
-            $this->birth_date ? ConvertEnToPtBrDate(date: $this->birth_date) : null
+        return Attribute::make(
+            get: fn(): ?string =>
+            $this->birth_date
+                ? ConvertEnToPtBrDate(date: $this->birth_date)
+                : null,
         );
     }
 }

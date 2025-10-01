@@ -8,6 +8,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Forms;
+use Filament\Forms\Set;
 
 class SourceService extends BaseService
 {
@@ -47,7 +48,7 @@ class SourceService extends BaseService
                     ]),
             ])
             ->action(
-                function (array $data, string|array|null $state, callable $set) use ($field, $multiple): void {
+                function (array $data, Set $set, mixed $state) use ($field, $multiple): void {
                     $source = $this->source->create($data);
 
                     if ($multiple) {

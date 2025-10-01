@@ -9,6 +9,7 @@ use App\Enums\ProfileInfos\EducationalLevelEnum;
 use App\Enums\ProfileInfos\GenderEnum;
 use App\Enums\ProfileInfos\MaritalStatusEnum;
 use App\Enums\ProfileInfos\UserStatusEnum;
+use App\Models\Cms\Post;
 use App\Models\Crm\Business\Business;
 use App\Models\Crm\Contacts\Contact;
 use App\Models\Financial\Transaction;
@@ -116,6 +117,11 @@ class User extends Authenticatable implements FilamentUser, HasMedia
      *
      */
 
+    public function cmsPosts(): HasMany
+    {
+        return $this->hasMany(related: Post::class, foreignKey: 'user_id');
+    }
+
     public function activities(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -161,14 +167,14 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     {
         return $this->belongsToMany(related: Team::class)
             ->withPivot(columns: 'role')
-            ->wherePivot(column: 'role', operator: 2); // 2 - 'Colaborador/Collaborator'
+            ->wherePivot(column: 'role', operator: 2); // 2 - Collaborator
     }
 
     public function coordinatorTeams(): BelongsToMany
     {
         return $this->belongsToMany(related: Team::class)
             ->withPivot(columns: 'role')
-            ->wherePivot(column: 'role', operator: 1); // 1 - 'Líder/Leader ou Coordenador/Coordinator'
+            ->wherePivot(column: 'role', operator: 1); // 1 - Coordenador
     }
 
     public function teams(): BelongsToMany
@@ -227,78 +233,93 @@ class User extends Authenticatable implements FilamentUser, HasMedia
 
     protected function displayAdditionalEmails(): Attribute
     {
-        return Attribute::get(
-            fn(): ?array =>
-            collect($this->additional_emails ?? [])
-                ->filter(
-                    fn(array $email): bool =>
-                    !empty($email['email'])
-                )
-                ->map(
-                    fn(array $email): string =>
-                    $email['email'] . (!empty($email['name']) ? " ({$email['name']})" : '')
-                )
-                ->values()
-                ->all() ?: null
+        return Attribute::make(
+            get: function (): ?array {
+                $items = is_array($this->additional_emails) ? $this->additional_emails : [];
+
+                $result = collect($items)
+                    ->filter(fn($email) => is_array($email) && !empty($email['email']))
+                    ->map(fn($email) => $email['email'] . (!empty($email['name']) ? " ({$email['name']})" : ''))
+                    ->values()
+                    ->all();
+
+                return !empty($result) ? $result : null;
+            },
         );
     }
 
     protected function displayMainPhone(): Attribute
     {
-        return Attribute::get(
-            fn(): ?string =>
-            $this->phones[0]['number'] ?? null
+        return Attribute::make(
+            get: function (): ?string {
+                $phones = is_array($this->phones) ? $this->phones : [];
+                return isset($phones[0]['number']) ? $phones[0]['number'] : null;
+            },
         );
     }
 
     protected function displayMainPhoneWithName(): Attribute
     {
-        return Attribute::get(
-            fn(): ?string =>
-            isset($this->phones[0]['number'])
-                ? $this->phones[0]['number'] . (!empty($this->phones[0]['name']) ? " ({$this->phones[0]['name']})" : '')
-                : null
+        return Attribute::make(
+            get: function (): ?string {
+                $phones = is_array($this->phones) ? $this->phones : [];
+
+                if (!isset($phones[0]['number'])) {
+                    return null;
+                }
+
+                $number = $phones[0]['number'];
+                $name   = $phones[0]['name'] ?? null;
+
+                return $number . (!empty($name) ? " ({$name})" : '');
+            },
         );
     }
 
     protected function displayAdditionalPhones(): Attribute
     {
-        return Attribute::get(
-            fn(): ?array =>
-            collect($this->phones ?? [])
-                ->slice(1)
-                ->map(
-                    fn(array $phone): string =>
-                    $phone['number'] . (!empty($phone['name']) ? " ({$phone['name']})" : '')
-                )
-                ->values()
-                ->all() ?: null
+        return Attribute::make(
+            get: function (): ?array {
+                $phones = is_array($this->phones) ? $this->phones : [];
+
+                $result = collect($phones)
+                    ->slice(1)
+                    ->filter(fn($phone) => is_array($phone) && !empty($phone['number']))
+                    ->map(fn($phone) => $phone['number'] . (!empty($phone['name']) ? " ({$phone['name']})" : ''))
+                    ->values()
+                    ->all();
+
+                return !empty($result) ? $result : null;
+            },
         );
     }
 
     protected function displayBirthDate(): Attribute
     {
-        return Attribute::get(
-            fn(): ?string =>
-            $this->birth_date ? ConvertEnToPtBrDate(date: $this->birth_date) : null
+        return Attribute::make(
+            get: fn(): ?string =>
+            $this->birth_date
+                ? ConvertEnToPtBrDate(date: $this->birth_date)
+                : null,
         );
     }
 
     protected function featuredImage(): Attribute
     {
-        return Attribute::get(
-            fn(): ?Media =>
-            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images')
+        return Attribute::make(
+            get: fn(): ?Media =>
+            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images'),
         );
     }
 
     protected function attachments(): Attribute
     {
-        return Attribute::get(
-            fn(): ?Collection =>
-            $this->getMedia('attachments')
-                ->sortBy('order_column')
-                ->whenEmpty(fn() => null)
+        return Attribute::make(
+            get: function (): ?Collection {
+                $media = $this->getMedia('attachments')->sortBy('order_column');
+
+                return $media->isEmpty() ? null : $media;
+            },
         );
     }
 }

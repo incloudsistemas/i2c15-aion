@@ -60,26 +60,6 @@ class BankAccountService extends BaseService
             );
     }
 
-    public function mutateRecordDataToEdit(BankAccount $bankAccount, array $data): array
-    {
-        $data['balance'] = $bankAccount->display_balance ?? '0,00';
-
-        return $data;
-    }
-
-    public function mutateFormDataToEdit(BankAccount $bankAccount, array $data): array
-    {
-        $bankAccount->load([
-            'bankInstitution:id,name',
-            'agency:id,name',
-        ]);
-
-        $data['_old_record'] = $bankAccount->replicate()
-            ->toArray();
-
-        return $data;
-    }
-
     public function beforeCreateAction(array $data): void
     {
         if (isset($data['is_main']) && $data['is_main']) {
@@ -100,6 +80,26 @@ class BankAccountService extends BaseService
             currentRecord: $bankAccount,
             description: "Nova conta bancária <b>{$bankAccount->name}</b> cadastrada por <b>" . auth()->user()->name . "</b>"
         );
+    }
+
+    public function mutateRecordDataToEdit(BankAccount $bankAccount, array $data): array
+    {
+        $data['balance'] = $bankAccount->display_balance ?? '0,00';
+
+        return $data;
+    }
+
+    public function mutateFormDataToEdit(BankAccount $bankAccount, array $data): array
+    {
+        $bankAccount->load([
+            'bankInstitution:id,name',
+            'agency:id,name',
+        ]);
+
+        $data['_old_record'] = $bankAccount->replicate()
+            ->toArray();
+
+        return $data;
     }
 
     public function beforeEditAction(BankAccount $bankAccount, array $data): void

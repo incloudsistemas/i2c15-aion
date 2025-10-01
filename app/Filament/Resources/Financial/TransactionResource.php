@@ -710,6 +710,7 @@ abstract class TransactionResource extends Resource
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make(),
             ])
+            ->defaultPaginationPageOption(50)
             ->recordAction(Tables\Actions\ViewAction::class)
             ->recordUrl(null);
     }

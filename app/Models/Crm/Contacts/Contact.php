@@ -87,7 +87,7 @@ class Contact extends Model implements HasMedia
         return $this->belongsTo(related: Source::class, foreignKey: 'source_id');
     }
 
-    public function roles()
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
             related: Role::class,
@@ -124,8 +124,8 @@ class Contact extends Model implements HasMedia
 
     protected function displayContactableType(): Attribute
     {
-        return Attribute::get(
-            fn(): string =>
+        return Attribute::make(
+            get: fn(): ?string =>
             $this->contactable_type === MorphMapByClass(model: LegalEntity::class)
                 ? 'P. Jurídica'
                 : 'P. Física'
@@ -134,70 +134,83 @@ class Contact extends Model implements HasMedia
 
     protected function displayAdditionalEmails(): Attribute
     {
-        return Attribute::get(
-            fn(): ?array =>
-            collect($this->additional_emails ?? [])
-                ->filter(
-                    fn(array $email): bool =>
-                    !empty($email['email'])
-                )
-                ->map(
-                    fn(array $email): string =>
-                    $email['email'] . (!empty($email['name']) ? " ({$email['name']})" : '')
-                )
-                ->values()
-                ->all() ?: null
+        return Attribute::make(
+            get: function (): ?array {
+                $items = is_array($this->additional_emails) ? $this->additional_emails : [];
+
+                $result = collect($items)
+                    ->filter(fn($email) => is_array($email) && !empty($email['email']))
+                    ->map(fn($email) => $email['email'] . (!empty($email['name']) ? " ({$email['name']})" : ''))
+                    ->values()
+                    ->all();
+
+                return !empty($result) ? $result : null;
+            },
         );
     }
 
     protected function displayMainPhone(): Attribute
     {
-        return Attribute::get(
-            fn(): ?string =>
-            $this->phones[0]['number'] ?? null
+        return Attribute::make(
+            get: function (): ?string {
+                $phones = is_array($this->phones) ? $this->phones : [];
+                return isset($phones[0]['number']) ? $phones[0]['number'] : null;
+            },
         );
     }
 
     protected function displayMainPhoneWithName(): Attribute
     {
-        return Attribute::get(
-            fn(): ?string =>
-            isset($this->phones[0]['number'])
-                ? $this->phones[0]['number'] . (!empty($this->phones[0]['name']) ? " ({$this->phones[0]['name']})" : '')
-                : null
+        return Attribute::make(
+            get: function (): ?string {
+                $phones = is_array($this->phones) ? $this->phones : [];
+
+                if (!isset($phones[0]['number'])) {
+                    return null;
+                }
+
+                $number = $phones[0]['number'];
+                $name   = $phones[0]['name'] ?? null;
+
+                return $number . (!empty($name) ? " ({$name})" : '');
+            },
         );
     }
 
     protected function displayAdditionalPhones(): Attribute
     {
-        return Attribute::get(
-            fn(): ?array =>
-            collect($this->phones ?? [])
-                ->slice(1)
-                ->map(
-                    fn(array $phone): string =>
-                    $phone['number'] . (!empty($phone['name']) ? " ({$phone['name']})" : '')
-                )
-                ->values()
-                ->all() ?: null
+        return Attribute::make(
+            get: function (): ?array {
+                $phones = is_array($this->phones) ? $this->phones : [];
+
+                $result = collect($phones)
+                    ->slice(1)
+                    ->filter(fn($phone) => is_array($phone) && !empty($phone['number']))
+                    ->map(fn($phone) => $phone['number'] . (!empty($phone['name']) ? " ({$phone['name']})" : ''))
+                    ->values()
+                    ->all();
+
+                return !empty($result) ? $result : null;
+            },
         );
     }
 
     protected function featuredImage(): Attribute
     {
-        return Attribute::get(
-            fn(): ?Media =>
-            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images')
+        return Attribute::make(
+            get: fn(): ?Media =>
+            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images'),
         );
     }
 
     protected function attachments(): Attribute
     {
-        return Attribute::get(
-            fn(): ?Collection =>
-            $this->getMedia('attachments')
-                ->sortBy('order_column')
-                ->whenEmpty(fn() => null)
+        return Attribute::make(
+            get: function (): ?Collection {
+                $media = $this->getMedia('attachments')->sortBy('order_column');
+
+                return $media->isEmpty() ? null : $media;
+            },
         );
     }
 }

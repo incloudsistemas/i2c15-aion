@@ -72,8 +72,10 @@ class Agency extends Model implements HasMedia
 
         return [
             'slug' => [
-                'source'   => 'name',
-                'onUpdate' => true,
+                'source'         => 'name',
+                'unique'         => true,
+                'onUpdate'       => true,
+                'includeTrashed' => true,
             ],
         ];
     }
@@ -115,19 +117,20 @@ class Agency extends Model implements HasMedia
 
     protected function featuredImage(): Attribute
     {
-        return Attribute::get(
-            fn(): ?Media =>
-            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images')
+        return Attribute::make(
+            get: fn(): ?Media =>
+            $this->getFirstMedia('avatar') ?: $this->getFirstMedia('images'),
         );
     }
 
     protected function attachments(): Attribute
     {
-        return Attribute::get(
-            fn(): ?Collection =>
-            $this->getMedia('attachments')
-                ->sortBy('order_column')
-                ->whenEmpty(fn() => null)
+        return Attribute::make(
+            get: function (): ?Collection {
+                $media = $this->getMedia('attachments')->sortBy('order_column');
+
+                return $media->isEmpty() ? null : $media;
+            },
         );
     }
 }

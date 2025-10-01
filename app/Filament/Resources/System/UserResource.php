@@ -13,6 +13,7 @@ use App\Filament\Resources\System\UserResource\RelationManagers;
 use App\Models\System\User;
 use App\Services\Polymorphics\AddressService;
 use App\Services\System\RoleService;
+use App\Services\System\TeamService;
 use App\Services\System\UserService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -232,6 +233,42 @@ class UserResource extends Resource
                     )
                     ->maxLength(255)
                     ->dehydrated(false),
+                Forms\Components\Select::make('teams.coordinators')
+                    ->label(__('Equipe(s) como coordenador'))
+                    ->helperText(__('Deseja vincular este usuário à(s) equipe(s) como coordenador?'))
+                    ->options(
+                        fn (TeamService $service): array =>
+                        $service->getOptionsByTeamsGroupedByAgencies(),
+                    )
+                    ->multiple()
+                    // ->selectablePlaceholder(false)
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->hidden(
+                        fn (callable $get): bool =>
+                        // 3 - Administrador, 4 - Líder, 5 - Coordenador
+                        empty(array_intersect([3, 4, 5], $get('roles')))
+                    )
+                    ->columnSpanFull(),
+                Forms\Components\Select::make('teams.collaborators')
+                    ->label(__('Equipe(s) como colaborador'))
+                    ->helperText(__('Deseja vincular este usuário à(s) equipe(s) como colaborador?'))
+                    ->options(
+                        fn (TeamService $service): array =>
+                        $service->getOptionsByTeamsGroupedByAgencies(),
+                    )
+                    ->multiple()
+                    // ->selectablePlaceholder(false)
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->hidden(
+                        fn (callable $get): bool =>
+                        // 6 - Colaborador
+                        !in_array(6, $get('roles'))
+                    )
+                    ->columnSpanFull(),
                 Forms\Components\Select::make('status')
                     ->label(__('Status'))
                     ->options(UserStatusEnum::class)
@@ -302,8 +339,8 @@ class UserResource extends Resource
                         '1:1',  // ex: 500x500px
                     ])
                     ->circleCropper()
-                    ->imageResizeTargetWidth(500)
-                    ->imageResizeTargetHeight(500)
+                    ->imageResizeTargetWidth('500')
+                    ->imageResizeTargetHeight('500')
                     ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/jpg', 'image/gif'])
                     ->maxSize(5120)
                     ->getUploadedFileNameForStorageUsing(
@@ -636,8 +673,6 @@ class UserResource extends Resource
                     ->tabs([
                         Infolists\Components\Tabs\Tab::make(__('Infos. Gerais'))
                             ->schema([
-                                Infolists\Components\TextEntry::make('id')
-                                    ->label(__('#ID')),
                                 Infolists\Components\SpatieMediaLibraryImageEntry::make('avatar')
                                     ->label(__('Avatar'))
                                     ->hiddenLabel()
@@ -648,6 +683,8 @@ class UserResource extends Resource
                                         fn(mixed $state): bool =>
                                         !empty($state),
                                     ),
+                                Infolists\Components\TextEntry::make('id')
+                                    ->label(__('#ID')),
                                 Infolists\Components\TextEntry::make('name')
                                     ->label(__('Nome')),
                                 Infolists\Components\TextEntry::make('roles.name')

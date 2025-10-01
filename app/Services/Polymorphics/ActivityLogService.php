@@ -18,8 +18,8 @@ class ActivityLogService extends BaseService
     {
         $map = [
             'users'           => \App\Transformers\Polymorphics\ActivityLog\UserTransformer::class,
-            'crm_business'    => \App\Transformers\Polymorphics\ActivityLog\BusinessTransformer::class,
             'media'           => \App\Transformers\Polymorphics\ActivityLog\MediaTransformer::class,
+            'crm_business'    => \App\Transformers\Polymorphics\ActivityLog\BusinessTransformer::class,
             'activity_notes'  => \App\Transformers\Polymorphics\ActivityLog\ActivityTransformer::class,
             'activity_emails' => \App\Transformers\Polymorphics\ActivityLog\ActivityTransformer::class,
             'activity_tasks'  => \App\Transformers\Polymorphics\ActivityLog\ActivityTransformer::class,

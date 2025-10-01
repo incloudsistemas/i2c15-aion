@@ -51,8 +51,8 @@ class Address extends Model
         return [
             'slug' => [
                 'source'   => ['city', 'uf.name'],
-                'onUpdate' => true,
                 'unique'   => false,
+                'onUpdate' => true,
             ],
         ];
     }

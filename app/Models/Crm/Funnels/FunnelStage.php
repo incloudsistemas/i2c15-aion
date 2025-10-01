@@ -27,6 +27,32 @@ class FunnelStage extends Model
         'order',
     ];
 
+    protected static function booted()
+    {
+        static::observe(FunnelStageObserver::class);
+    }
+
+    public function sluggable(): array
+    {
+        if (!empty($this->slug)) {
+            return [];
+        }
+
+        return [
+            'slug' => [
+                'source'         => 'name',
+                'unique'         => true,
+                'onUpdate'       => true,
+                'includeTrashed' => true,
+            ],
+        ];
+    }
+
+    /**
+     * RELATIONSHIPS.
+     *
+     */
+
     public function business(): HasMany
     {
         return $this->hasMany(related: Business::class, foreignKey: 'funnel_stage_id');
@@ -39,51 +65,11 @@ class FunnelStage extends Model
 
     public function substages(): HasMany
     {
-        return $this->hasMany(related: FunnelSubstage::class);
+        return $this->hasMany(related: FunnelSubstage::class, foreignKey: 'funnel_stage_id');
     }
 
     public function funnel(): BelongsTo
     {
         return $this->belongsTo(related: Funnel::class, foreignKey: 'funnel_id');
     }
-
-    public function sluggable(): array
-    {
-        if (!empty($this->slug)) {
-            return [];
-        }
-
-        return [
-            'slug' => [
-                'source'   => 'name',
-                'onUpdate' => true,
-            ],
-        ];
-    }
-
-    /**
-     * EVENT LISTENERS.
-     *
-     */
-
-    protected static function boot()
-    {
-        parent::boot();
-        self::observe(FunnelStageObserver::class);
-    }
-
-    /**
-     * SCOPES.
-     *
-     */
-
-    /**
-     * MUTATORS.
-     *
-     */
-
-    /**
-     * CUSTOMS.
-     *
-     */
 }

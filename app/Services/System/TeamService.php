@@ -5,6 +5,7 @@ namespace App\Services\System;
 use App\Models\System\Team;
 use App\Services\BaseService;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class TeamService extends BaseService
@@ -12,6 +13,50 @@ class TeamService extends BaseService
     public function __construct(protected Team $team)
     {
         parent::__construct();
+    }
+
+    public function getQueryByTeams(Builder $query): Builder
+    {
+        return $query->byStatuses(statuses: [1]) // 1 - Ativo
+            ->orderBy('name', 'asc');
+    }
+
+    public function getOptionsByTeams(): array
+    {
+        return $this->team->byStatuses(statuses: [1]) // 1 - Ativo
+            ->orderBy('name', 'asc')
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
+    public function getOptionsByTeamsGroupedByAgencies(): array
+    {
+        $withAgencies = $this->team->with('agency')
+            ->byStatuses(statuses: [1]) // 1 - Ativo
+            ->whereHas('agency', function (Builder $query): Builder {
+                return $query->where('status', 1); // 1 - Ativo
+            })
+            ->orderBy('name', 'asc')
+            ->get()
+            ->groupBy('agency.name')
+            ->map(function ($teams) {
+                return $teams->pluck('name', 'id');
+            })
+            ->toArray();
+
+        $withoutAgencies = $this->team->byStatuses(statuses: [1]) // 1 - Ativo
+            ->whereDoesntHave('agency')
+            ->orderBy('name', 'asc')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        if (!empty($withoutAgencies)) {
+            $withAgencies[__('Sem Agência')] = $withoutAgencies;
+        }
+
+        ksort($withAgencies, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $withAgencies;
     }
 
     /**

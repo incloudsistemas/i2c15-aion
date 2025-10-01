@@ -168,8 +168,8 @@ class TeamResource extends Resource
                     ->label(__('Colaborador(es)'))
                     ->getSearchResultsUsing(
                         fn(UserService $service, string $search): array =>
-                        // 2 - Administrador, 6 - Colaborador
-                        $service->getUserOptionsBySearch(search: $search, roles: [2, 6]),
+                        // 6 - Colaborador
+                        $service->getUserOptionsBySearch(search: $search, roles: [6]),
                     )
                     ->getOptionLabelsUsing(
                         fn(UserService $service, array $values): array =>

@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/i2c15-starter-kit",
+    "name": "incloudsistemas/i2c15-aion",
     "type": "project",
-    "description": "The InCloud skeleton engine application for the InCloudCodile15.",
+    "description": "Website (CMS), CRM, Financial and Marketing Automation.",
     "keywords": [
         "framework",
         "laravel",

@@ -9,6 +9,7 @@ use App\Services\Crm\SourceService;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms;
+use Filament\Forms\Set;
 use Filament\Support;
 
 class IndividualService extends BaseService
@@ -18,7 +19,7 @@ class IndividualService extends BaseService
         parent::__construct();
     }
 
-    public function validateCpf(?Individual $individual, string $attribute, string $state, Closure $fail): void
+    public function validateCpf(?Individual $individual, string $attribute, mixed $state, Closure $fail): void
     {
         $userId = auth()->user()->id;
 
@@ -131,7 +132,7 @@ class IndividualService extends BaseService
                                 function (ContactService $service): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service): void {
                                         $contactableType = MorphMapByClass(model: Individual::class);
@@ -161,7 +162,7 @@ class IndividualService extends BaseService
                                 function (ContactService $service): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ) use ($service): void {
                                         $contactableType = MorphMapByClass(model: Individual::class);
@@ -184,7 +185,7 @@ class IndividualService extends BaseService
                                 function (): Closure {
                                     return function (
                                         string $attribute,
-                                        string $state,
+                                        mixed $state,
                                         Closure $fail
                                     ): void {
                                         $this->validateCpf(
@@ -220,7 +221,7 @@ class IndividualService extends BaseService
                     ]),
             ])
             ->action(
-                function (array $data, string|array|null $state, callable $set) use ($field, $multiple, $returnKey): void {
+                function (array $data, Set $set, mixed $state) use ($field, $multiple, $returnKey): void {
                     $individual = $this->individual->create($data);
 
                     $data['contact']['user_id'] = auth()->user()->id;

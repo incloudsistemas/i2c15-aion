@@ -47,8 +47,10 @@ class Category extends Model
 
         return [
             'slug' => [
-                'source'   => 'name',
-                'onUpdate' => true,
+                'source'         => 'name',
+                'unique'         => true,
+                'onUpdate'       => true,
+                'includeTrashed' => true,
             ],
         ];
     }
@@ -70,12 +72,12 @@ class Category extends Model
 
     public function mainCategory(): BelongsTo
     {
-        return $this->belongsTo(related: Self::class, foreignKey: 'category_id');
+        return $this->belongsTo(related: self::class, foreignKey: 'category_id');
     }
 
     public function subcategories(): HasMany
     {
-        return $this->hasMany(related: Self::class, foreignKey: 'category_id');
+        return $this->hasMany(related: self::class, foreignKey: 'category_id');
     }
 
     /**

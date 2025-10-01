@@ -43,8 +43,10 @@ class Source extends Model
 
         return [
             'slug' => [
-                'source'   => 'name',
-                'onUpdate' => true,
+                'source'        => 'name',
+                'unique'         => true,
+                'onUpdate'       => true,
+                'includeTrashed' => true,
             ],
         ];
     }

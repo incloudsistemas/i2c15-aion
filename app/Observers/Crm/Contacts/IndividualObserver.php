@@ -40,10 +40,12 @@ class IndividualObserver
             description: "Contato <b>{$individual->contact->name}</b> excluído por <b>" . auth()->user()->name . "</b>"
         );
 
-        $individual->cpf = !empty($individual->cpf) ? $individual->cpf . '//deleted_' . md5(uniqid()) : null;
+        $deleted = '//deleted_' . md5(uniqid());
+
+        $individual->cpf = !empty($individual->cpf) ? $individual->cpf . $deleted : null;
         $individual->save();
 
-        $individual->contact->email = !empty($individual->contact->email) ? $individual->contact->email . '//deleted_' . md5(uniqid()) : null;
+        $individual->contact->email = !empty($individual->contact->email) ? $individual->contact->email . $deleted : null;
         $individual->contact->save();
 
         $individual->contact->delete();

@@ -134,7 +134,8 @@ if (!function_exists('PlaceholderImg')) {
     ): string {
         $text = str_replace(' ', '+', $text);
 
-        // "https://via.placeholder.com/{$width}x{$height}/{$background}/{$textColor}?text={$text}";
-        return "https://fakeimg.pl/{$width}x{$height}/{$background}/{$textColor}?text={$text}";
+        return "https://dummyimage.com/{$width}x{$height}/{$background}/{$textColor}.png&text={$text}";
+        // return "https://via.placeholder.com/{$width}x{$height}/{$background}/{$textColor}?text={$text}";
+        // return "https://fakeimg.pl/{$width}x{$height}/{$background}/{$textColor}?text={$text}";
     }
 }

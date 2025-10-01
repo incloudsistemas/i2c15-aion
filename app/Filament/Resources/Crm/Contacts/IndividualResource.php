@@ -537,7 +537,7 @@ class IndividualResource extends Resource
                     name: 'contact.owner',
                     titleAttribute: 'name',
                     modifyQueryUsing: fn(ContactService $service, Builder $query): Builder =>
-                    $service->getQueryByElementsWhereHasContactsBasedOnAuthRoles(query: $query),
+                    $service->getQueryByElementsWhereHasContactsBasedOnAuthUserRoles(query: $query),
                 )
                 ->multiple()
                 ->preload(),
